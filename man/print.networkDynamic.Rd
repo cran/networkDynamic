@@ -1,0 +1,45 @@
+\name{print.networkDynamic}
+\alias{print.networkDynamic}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+Provide a view of a networkDynamic object including timing information
+}
+\description{
+Prints out some very basic descriptive stats about the network's dynamics, and the the normal information printed for network objects.
+}
+\usage{
+  
+  \method{print}{networkDynamic}(x, ...)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{x}{ an object of class networkDynamic including dynamic relational information
+}
+  \item{\dots}{
+%%     ~~Describe \code{\dots} here~~
+}
+}
+\details{
+Prints some info about the number of time events in a networkDynamic object, then calls print.network
+}
+\value{
+ returns a dynamicNetwork object?
+}
+
+\author{
+Pavel
+}
+\note{
+not fully implemented
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+ \code{\link{print.network}}
+}
+
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
