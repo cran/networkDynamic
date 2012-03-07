@@ -1,18 +1,12 @@
+#  File networkDynamic/R/extract.R
+#  Part of the statnet package, http://statnetproject.org
+#
+#  This software is distributed under the GPL-3 license.  It is free,
+#  open source, and has the attribution requirements (GPL Section 7) in
+#    http://statnetproject.org/attribution
+#
+#  Copyright 2012 the statnet development team
 ######################################################################
-#
-# extract.R
-#
-# Written by Carter T. Butts <buttsc@uci.edu>.
-#
-# Last Modified 04/17/09
-# Licensed under the GNU General Public License version 2 (June, 1991)
-#
-# Part of the R/networkDynamic package
-#
-# This file contains various routines for taking temporal
-# extracts/cross-sections of network class objects with dynamic
-# extensions.
-#
 # Contents:
 #
 # "%t%.network"

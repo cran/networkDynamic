@@ -1,3 +1,12 @@
+%  File networkDynamic/man/as.data.frame.networkDynamic.Rd
+%  Part of the statnet package, http://statnetproject.org
+%
+%  This software is distributed under the GPL-3 license.  It is free,
+%  open source, and has the attribution requirements (GPL Section 7) in
+%    http://statnetproject.org/attribution
+%
+%  Copyright 2012 the statnet development team
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \name{as.data.frame.networkDynamic}
 \alias{as.data.frame.networkDynamic}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -5,31 +14,43 @@
 Convert a networkDynamic object into alternate representations.
 }
 \description{
-Converts a networkDynamic object into some sort of data frame giving lists of edges and their activity spells.
+Converts a networkDynamic object into a data frame giving lists of edges and their activity spells.
 }
 \usage{
-  \method{as.data.frame}{networkDynamic}(x, row.names = NULL, optional = FALSE, ...)
+\method{as.data.frame}{networkDynamic}(x, row.names = NULL, optional = FALSE,
+                                       start = NULL, end = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{a networkDynamic object}
   \item{row.names}{ignored}
   \item{optional}{ignored}
+  \item{start}{Left-censoring time: time at which the network was first
+    observed. Edge spells with onset \code{-Inf} are given this
+    as their start time (and marked as left censored). See Details for
+    the default values.}
+  \item{end}{Right-censoring time: time at which the network was last
+    observed. Edge spells with terminus \code{Inf} are given this
+    as their end time (and marked as right censored). See Details for
+    the default values.}
   \item{\dots}{possible additional arguments}
 }
 \details{
-Converts a networkDynamic object into some sort of data frame giving lists of edges and their activity spells.  Probably has arguments to indicate if it should print timed edgelist or timed vertex list?
+Converts a networkDynamic object into a data frame giving lists of edges
+and their activity spells, including whether an activity spell was
+"censored". If \code{x} has \code{attr}-style attribute \code{"start"},
+it will be used as the left-censoring time and similarly for
+\code{"end"} and right-censoring time.
 }
 \value{
-A data.frame containing timed relational information describing the networkDynamic object. FORMAT?
+A \code{\link{data.frame}} containing timed relational information
+describing the networkDynamic object, having the following columns:
+\item{start, end}{Onset and terminus times of an edge, respectively, if
+  not censored, and left and right censoring times, if censored.}
+\item{tail, head}{Tail and head of the edge.}
+\item{left.censored, right.censored}{TRUE if onset/terminus time is censored.}
 }
 
-\author{
-Pavel ?
-}
-\note{
-Note: probably not fully implemented
-}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

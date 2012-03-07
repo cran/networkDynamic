@@ -13,7 +13,7 @@ foo <- packageDescription("networkDynamic")
 @
 
 \title{Package examples for \Sexpr{foo$Package}: \Sexpr{foo$Title} (Version \Sexpr{foo$Version})}  
-\author{Ayn Leslie-Cook, Zack Almquist, Skye Bender-deMoll,\\ Martina Morris, Carter T. Butts}
+\author{Ayn Leslie-Cook, Zack Almquist, Pavel N. Krivitsky,\\Skye Bender-deMoll, David R. Hunter\\ Martina Morris, Carter T. Butts}
 \maketitle
 
 THIS IS A DRAFT. Not all authors have approved, and in some situations the package gives incorrect results.

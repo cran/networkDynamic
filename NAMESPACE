@@ -2,7 +2,7 @@ useDynLib(networkDynamic)
 
 export(
 print.networkDynamic,
-       #as.data.frame.networkDynamic,
+       as.data.frame.networkDynamic,
 is.networkDynamic,
 as.networkDynamic,
        as.networkDynamic.networkDynamic,

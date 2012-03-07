@@ -1,21 +1,23 @@
+#  File networkDynamic/R/utilities.R
+#  Part of the statnet package, http://statnetproject.org
+#
+#  This software is distributed under the GPL-3 license.  It is free,
+#  open source, and has the attribution requirements (GPL Section 7) in
+#    http://statnetproject.org/attribution
+#
+#  Copyright 2012 the statnet development team
+
 ################################################
+# utilities.R
+# Author: Zack W. Almquist, Pavel 
+#
+# Includes:
+#		     c.network #overloaded c operator for network objects
+#
+#	misc helper functions not for general use
+#
 ################################################
-######## utilities.R
-######## Author: Zack W. Almquist
-######## Date: 02/21/2012
-########
-######## Includes:
-########
-########           ndConverter
-########           ndConverter.network.list
-########           ndConverter.data.frame
-########           ndConverter.list
-########		     c.network #overloaded c operator for network objects
-########
-########			misc helper functions not for general use
-########
-################################################
-################################################
+
 
 
 
@@ -23,19 +25,30 @@
 ################
 ### start networkDynamic-> other formats
 ################
-as.data.frame.networkDynamic<-function(x,row.names = NULL, optional = FALSE, ...){
-	tm<-lapply(x$mel,function(y){
-	active<-y$atl$active
-	ac<-matrix(rep(cbind(y$outl,y$inl),nrow(active)),ncol=2,byrow=TRUE)
-	cbind(active,ac)
-	})
-        out <- do.call(rbind,tm)
-	out <- cbind(out,out[,3]==-Inf, out[,4]==Inf,out[,2]-out[,1])
-	colnames(out)<-c("start","end","tail","head","left.censored","right.censored","duration")
-	out<-data.frame(out)
-        out$left.censored <- as.logical(out$left.censored)
-        out$right.censored <- as.logical(out$right.censored)
-	out
+as.data.frame.networkDynamic<-function(x,row.names = NULL, optional = FALSE, start=NULL, end=NULL, ...){
+  if(is.null(start) && !is.null(attr(x,"start"))) start <- attr(x,"start")
+  if(is.null(end) && !is.null(attr(x,"end"))) end <- attr(x,"end")
+  
+  tm<-lapply(x$mel,function(y){
+    if(is.null(y)) NULL else{
+      active<-y$atl$active
+      ac<-matrix(rep(cbind(y$outl,y$inl),nrow(active)),ncol=2,byrow=TRUE)
+      cbind(active,ac)
+    }
+  })
+  out <- do.call(rbind,tm)
+  colnames(out)<-c("start","end","tail","head")
+  out<-data.frame(out)
+  
+  out$left.censored <- out$start==-Inf
+  out$right.censored <- out$end==Inf
+
+  if(!is.null(start)) out$start[out$left.censored] <- start
+  
+  if(!is.null(end)) out$end[out$right.censored] <- end
+  
+  out$duration <- out$end-out$start  
+  out
 }
 ################
 ### end networkDynamic-> other formats
@@ -76,13 +89,14 @@ as.networkDynamic.network <- function(object, spells=NULL, toggles=NULL, start=m
     spells <- duration.matrix(object, toggles, start, end)
   }else spells <- as.data.frame(spells)
 
-  newedges <- rbind(as.matrix(object,matrix.type="edgelist"), as.matrix(spells[,3:4]))
+  newedges <- as.matrix(spells[,3:4])
   if(!is.directed(object)) newedges <- cbind(pmin(newedges[,1],newedges[,2]),pmax(newedges[,1],newedges[,2]))
   newedges <- unique(newedges)
   nw <- network.copy(object)
   nw[,]<-0
   nw <- add.edges(nw,newedges[,1],newedges[,2])
   men<-mapen(nw,spells[,3:4])
+  #colnames(spells)<-c("start","end","tail","head","left.censored","right.censored")
   x<-cbind(men,spells)
   out <- networkDynamicInternal(nw,x)
   set.nD.class(out)
@@ -181,7 +195,7 @@ listSpell<-function(x,bn){
 ### adds spell 
 addSpellnl<-function(net,bn,time1,time2){
 	### Edge Spell
-	elt<-mvnum(snel(as.matrix(net,"edgelist")),bn%v%"vertex.names") ## builds edgelist 
+	elt<-mvnum(snel(as.edgelist(net)),bn%v%"vertex.names") ## builds edgelist 
 	eids<-mapen(bn,elt)
 	os<-rep(time1,length(eids))
 	ts<-rep(time2,length(eids))
@@ -236,7 +250,7 @@ namedEL<-function(ln){
 	fout<-vector()
 for(i in 1:length(ln)){
 	if(is.network(ln[[i]])){
-		out<-as.matrix(ln[[i]],"edgelist")
+		out<-as.edgelist(ln[[i]])
 		fout<-rbind(fout,snel(out))
 		}
 	}
@@ -289,4 +303,10 @@ net
 set.nD.class <- function(x){
   if(!is.networkDynamic(x)) class(x) <- c("networkDynamic", class(x))
   x
+}
+
+as.edgelist <- function(nw, attrname = NULL, as.sna.edgelist = FALSE,...){
+  el <- as.matrix.network.edgelist(nw, attrname=attrname, as.sna.edgelist=as.sna.edgelist,...)
+  if(!is.directed(nw)) el[,1:2] <- cbind(pmin(el[,1],el[,2]),pmax(el[,1],el[,2]))
+  el
 }
