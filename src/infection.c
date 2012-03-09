@@ -1,3 +1,13 @@
+/*
+ *  File networkDynamic/src/infection.c
+ *  Part of the statnet package, http://statnetproject.org
+ *
+ *  This software is distributed under the GPL-3 license.  It is free,
+ *  open source, and has the attribution requirements (GPL Section 7) in
+ *    http://statnetproject.org/attribution
+ *
+ *  Copyright 2012 the statnet development team
+ */
 /*  This is a collection of functions used to calculate diagnostic 
     statistics for dynamic networks. */
 
@@ -20,7 +30,7 @@ void Prevalence (int *nnodes,
       int *nsim, int *prev) {
   Vertex alter=0;
   Edge e;
-  Vertex *id, *od;
+  /* Vertex *id, *od; */
   Edge i, j, ne = *nedge;
   int k, time, ndyads, rane;
   int bipartite = *nfem;
@@ -36,8 +46,8 @@ void Prevalence (int *nnodes,
     /* R's serialization of matrixes is column-major, so this works: */
    nw = NetworkInitialize(edge, edge+*nedge, ne,
                           *nnodes, 0, bipartite, 0, 0, NULL);
-   id=nw.indegree;
-   od=nw.outdegree;
+   /*id=nw.indegree;
+     od=nw.outdegree; */
    ndyads = bipartite*(*nnodes-bipartite);
    if(*randomseeds){
       // Sample numdissolved edges without replacement
