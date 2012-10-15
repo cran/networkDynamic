@@ -34,7 +34,7 @@
   They must be consecutive, ordered forward in time, and strictly
   non-overlapping.  
   
-  The syntax for defining or querying spells can specify either an instantaneous time point or an interval.  The commands for this include \code{at=},  \code{onset=}, \code{terminus=} and \code{length=}.  Any numeric values may be used in the interval specifications, including  \code{Inf} and \code{-Inf}, (with some restrictions, see \code{\link{activity.attribute}}).  The latter are used to create spells whch are open-ended.  However, \code{Inf} and \code{-Inf} cannot be used with the \code{at} specification.
+  The syntax for defining or querying spells can specify either an instantaneous time point or an interval.  The commands for this include \code{at=},  \code{onset=}, \code{terminus=} and \code{length=}.  Any numeric values may be used in the interval specifications, including  \code{Inf} and \code{-Inf}, (with some restrictions, see below).  A spell with \code{onset=-Inf} represents onset censoring. A spell with \code{terminus=Inf} represents terminus censoring. \code{Inf} and \code{-Inf} cannot be used with the \code{at} specification. Similarly, \code{onset} can not be \code{Inf} and \code{terminus} can not be {-Inf}.
   
   The general syntax rules for specifying spells are as follows:
     
@@ -64,8 +64,16 @@
 % ~Make other sections like Warning with \section{Warning 5}{....} ~
 %}
 \seealso{ \code{\link{is.active}}, \code{\link{activate}}, \code{\link{activate.vertices}},\code{\link{activate.edges}}, \code{\link{deactivate.vertices}},\code{\link{deactivate.edges}},\code{\link{network.extensions}}}
-%\examples{
-%}
+\examples{
+triangle <- network.initialize(3)  # create a toy network
+
+activate.vertices(triangle,onset=1,terminus=5,v=1) 
+activate.vertices(triangle,onset=1,terminus=10,v=2)
+activate.vertices(triangle,onset=4,terminus=10,v=3)
+deactivate.vertices(triangle,onset=2, length=2, v=1)
+
+get.vertex.activity(triangle) # vertex spells
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

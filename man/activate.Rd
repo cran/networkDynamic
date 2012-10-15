@@ -27,7 +27,7 @@ activate.vertices(x, onset = NULL, terminus = NULL, length = NULL, at = NULL,
 deactivate.edges(x, onset = NULL, terminus = NULL, length = NULL, at = NULL,
     e = seq_along(x$mel))
 deactivate.vertices(x, onset = NULL, terminus = NULL, length = NULL, at = NULL,
-    v = seq_len(network.size(x)))
+    v = seq_len(network.size(x)), deactivate.edges = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -38,6 +38,7 @@ deactivate.vertices(x, onset = NULL, terminus = NULL, length = NULL, at = NULL,
   \item{at}{ optional, one or more time points to be activated. }
   \item{e}{ optional, one or more IDs indicating edges to be modified.}
   \item{v}{ optional, one or more IDs indicating vertices to be modified. }
+  \item{deactivate.edges}{optional, TRUE setting will automatically deactivate all the edges associated with the vertex being deactivated}
 }
 \details{
   An element in a dynamically extended network class is considered to be either \dQuote{active} or \dQuote{inactive} at any point in time, with the substantive meaning of \dQuote{activity} determined by the specific application context.  The \code{activate} and \code{deactivate} functions provide an interface for controlling the state of the elements in a dynamic network.
@@ -113,9 +114,40 @@ Edge/vertex activity is tracked through an attribute called (eponymously) \dQuot
 \note{ This function may not be entirely stable in the long run, since it makes explicit reference to internal elements of the network object; some syntactic changes could occur in the future. }
 
 \seealso{ \code{\link{is.active}} }
-%\examples{
-%}
+\examples{
+triangle <- network.initialize(3)  # create a toy network
+add.edge(triangle,1,2)    # add an edge between vertices 1 and 2
+add.edge(triangle,2,3)    # add more edges
+add.edge(triangle,3,1)
+
+# turn on all edges at time 1 only (0 length spell)
+activate.edges(triangle,at=1) 
+
+# activate edge (1,2) from t=2 to t=3
+activate.edges(triangle,onset=2, terminus=3,
+               e=get.edgeIDs(triangle,v=1,alter=2))
+               
+# activate edge (2,3) from t=4 for 2 time lengths
+activate.edges(triangle,onset=4, length=2, 
+               e=get.edgeIDs(triangle,v=2,alter=3))
+               
+deactivate.edges(triangle, at=2, e=1) # does not work since the spell is not 0-length
+is.active(triangle, at=2, e=1:3)
+
+deactivate.edges(triangle, e=1, onset=2, length=0.1)  # this deactivates the vertex
+is.active(triangle, at=2, e=1:3)  
+
+# this activates edges 2 and 3 at time 5
+activate.edges(triangle, e=2:3, at=5)
+
+# this doesn't do what you think; multiple spells for a single element is not allowed
+activate.edges(triangle, e=1, at=6:8)
+is.active(triangle, at=6, e=1:3)
+is.active(triangle, at=7, e=1:3)
+is.active(triangle, at=8, e=1:3)
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }
 \keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+

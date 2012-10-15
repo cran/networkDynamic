@@ -14,11 +14,18 @@
 #
 #   activate.edges
 #   activate.vertices
+#   add.edges.active
+#   add.vertices.active
 #   deactivate.edges
 #   deactivate.vertices
+#   delete.edge.activity
+#   delete.vertex.activity
 #   get.edgeIDs.active
 #   get.edges.active
 #   get.neighborhood.active
+#   get.change.times
+#   get.edge.activity
+#   get.vertex.activity
 #   is.active
 #   is.adjacent.active
 #   network.dyadcount.active
@@ -35,6 +42,9 @@
 #the appropriate mark.  Edges without an "active" attribute are given one.
 activate.edges <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
                            e=seq_along(x$mel)){
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+
   # checks for proper inputs, translations into onset and terminus
   if(!is.network(x)) 
     stop("activate.edges requires an argument of class network.\n")
@@ -60,54 +70,52 @@ activate.edges <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
   }
   if(!is.vector(e) || !is.numeric(e))
     stop("Edge ID's, e, must be a numeric vector in activate.edges.\n")
-  if(length(x$mel)==0)
-    return(invisible(set.nD.class(x)))
-  if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
-    stop("Illegal edge in activate.edges.\n")
+  if(length(x$mel)>0) {
+    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+      stop("Illegal edge in activate.edges.\n")
  
-
-  # preliminaries
-  e <- e[!sapply(x$mel[e], is.null)]  #Filter out non-edges
-  if(!is.null(at)) {
-    onset <- terminus <- rep(at, length=length(e))
-  } else if (!is.null(onset)) {
-    onset <- rep(onset, length=length(e))
-    if(!is.null(terminus))
-      terminus <- rep(terminus, length=length(e))
-    else if (!is.null(length))
-      terminus <- onset + rep(length, length=length(e))
-  } else {
-    if (is.null(terminus)) {
-      onset <- rep(-Inf, length=length(e))
-      terminus <- rep(Inf, length=length(e))
+    # preliminaries
+    e <- e[!sapply(x$mel[e], is.null)]  #Filter out non-edges
+    if(!is.null(at)) {
+      onset <- terminus <- rep(at, length=length(e))
+    } else if (!is.null(onset)) {
+      onset <- rep(onset, length=length(e))
+      if(!is.null(terminus))
+        terminus <- rep(terminus, length=length(e))
+      else if (!is.null(length))
+        terminus <- onset + rep(length, length=length(e))
     } else {
-      terminus <- rep(terminus, length=length(e))
-      onset <- terminus - rep(length, length=length(e))
+      if (is.null(terminus)) {
+        onset <- rep(-Inf, length=length(e))
+        terminus <- rep(Inf, length=length(e))
+      } else {
+        terminus <- rep(terminus, length=length(e))
+        onset <- terminus - rep(length, length=length(e))
+      }
     }
-  }
-  if(any(onset>terminus))
-    stop("Onset times must precede terminus times in activate.edges.\n")
-  
-  # choosing to ignore activation requests of (Inf,Inf) or (-Inf, -Inf)
-  ignore <- (onset==Inf) | (terminus==-Inf)
-  if(any(ignore)){
-    onset<-onset[!ignore]; terminus<-terminus[!ignore]; e<-e[!ignore]
-  }
-  if(length(e)==0)  return(invisible(set.nD.class(x)))
+    if(any(onset>terminus))
+      stop("Onset times must precede terminus times in activate.edges.\n")
+    
+    # choosing to ignore activation requests of (Inf,Inf) or (-Inf, -Inf)
+    ignore <- (onset==Inf) | (terminus==-Inf)
+    if(any(ignore)){
+      onset<-onset[!ignore]; terminus<-terminus[!ignore]; e<-e[!ignore]
+    }
+    if(length(e)==0)  return(invisible(set.nD.class(x)))
 
-  # get current active matrices and insert spells
-  active <- lapply(lapply(x$mel[e], "[[", "atl"), "[[", "active")
-  for(i in 1:length(active)){
-    if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
-      active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    # get current active matrices and insert spells
+    active <- lapply(lapply(x$mel[e], "[[", "atl"), "[[", "active")
+    for(i in 1:length(active)){
+      if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
+        active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    }
+    set.edge.attribute(x, "active", active, e)
   }
   
-  xn <- deparse(substitute(x))
-  ev <- parent.frame()
-  set.edge.attribute(x, "active", active, e)
+  set.nD.class(x)
   if(exists(xn, envir=ev))
     on.exit(assign(xn, x, pos=ev))
-  invisible(set.nD.class(x))  
+  invisible(x)  
 }
 
 
@@ -116,6 +124,9 @@ activate.edges <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
 #the appropriate mark.  Vertices without an "active" attribute are given one.
 activate.vertices <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
                               v=seq_len(network.size(x))) {
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+  
   # checks for proper inputs
   if(!is.network(x)) 
     stop("activate.vertices requires an argument of class network.\n")
@@ -171,21 +182,21 @@ activate.vertices <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
   if(any(ignore)){
     onset<-onset[!ignore]; terminus<-terminus[!ignore]; v<-v[!ignore]
   }
-  if(length(v)==0)  return(invisible(set.nD.class(x)))
+  if(length(v) > 0) {
 
-  # get current active matrices and insert spells
-  active <- lapply(x$val[v], "[[", "active")
-  for(i in 1:length(active)){
-    if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
-      active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    # get current active matrices and insert spells
+    active <- lapply(x$val[v], "[[", "active")
+    for(i in 1:length(active)){
+      if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
+        active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    }
+    set.vertex.attribute(x, "active", active, v)
   }
-  
-  xn <- deparse(substitute(x))
-  ev <- parent.frame()
-  set.vertex.attribute(x, "active", active, v)
+
+  set.nD.class(x)
   if(exists(xn, envir=ev))
     on.exit(assign(xn, x, pos=ev))
-  invisible(set.nD.class(x))  
+  invisible(x)  
 }
 
 
@@ -194,6 +205,9 @@ activate.vertices <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
 #the appropriate mark.  Edges without an "active" attribute are given one.
 deactivate.edges<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
                            e=seq_along(x$mel)){
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+
   # checks for proper inputs
   if(!is.network(x)) 
     stop("deactivate.edges requires an argument of class network.\n")
@@ -219,57 +233,56 @@ deactivate.edges<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
   }
   if(!is.vector(e) || !is.numeric(e))
     stop("Edge ID's, e, must be a numeric vector in deactivate.edges.\n")
-  if(length(x$mel)==0)
-    return(invisible(set.nD.class(x)))
-  if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
-    stop("Illegal edge in deactivate.edges.\n")
+  if(length(x$mel) > 0) {
+    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+      stop("Illegal edge in deactivate.edges.\n")
 
-  # preliminaries
-  e <- e[!sapply(x$mel[e], is.null)]  #Filter out non-edges
-  if(length(e)==0) return(invisible(set.nD.class(x)))
-  if(!is.null(at)) {
-    onset <- terminus <- rep(at, length=length(e))
-  } else if (!is.null(onset)) {
-    onset <- rep(onset, length=length(e))
-    if(!is.null(terminus))
-      terminus <- rep(terminus, length=length(e))
-    else if (!is.null(length))
-      terminus <- onset + rep(length, length=length(e))
-  } else {
-    if (is.null(terminus)) {
-      onset <- terminus <- rep(Inf, length=length(e))
-    }else {
-      terminus <- rep(terminus, length=length(e))
-      onset <- terminus - rep(length, length=length(e))
+    # preliminaries
+    e <- e[!sapply(x$mel[e], is.null)]  #Filter out non-edges
+    if(length(e)==0) return(invisible(set.nD.class(x)))
+    if(!is.null(at)) {
+      onset <- terminus <- rep(at, length=length(e))
+    } else if (!is.null(onset)) {
+      onset <- rep(onset, length=length(e))
+      if(!is.null(terminus))
+        terminus <- rep(terminus, length=length(e))
+      else if (!is.null(length))
+        terminus <- onset + rep(length, length=length(e))
+    } else {
+      if (is.null(terminus)) {
+        onset <- terminus <- rep(Inf, length=length(e))
+      }else {
+        terminus <- rep(terminus, length=length(e))
+        onset <- terminus - rep(length, length=length(e))
+      }
     }
-  }
-  if(any(onset>terminus))
-    stop("Onset times must precede terminus times in deactivate.edges.\n")
+    if(any(onset>terminus))
+      stop("Onset times must precede terminus times in deactivate.edges.\n")
 
   
-  #Get existing activity attributes and update as needed
-  active<-lapply(lapply(x$mel[e],"[[","atl"),"[[","active")
-  for(i in seq_along(active)){
-    if(is.infinite(onset[i]) && is.infinite(terminus[i])){
-      active[[i]]<-matrix(c(Inf, Inf),1,2)
-    }else if(is.null(active[[i]])){
-      if(is.infinite(onset[i]))
-        active[[i]]<-matrix(c(terminus[i],Inf),1,2)
-      else if (is.infinite(terminus[i]))
-        active[[i]]<-matrix(c(-Inf,onset[i]),1,2)
-      else
-        active[[i]]<-matrix(c(-Inf,terminus[i],onset[i],Inf),2,2)
-    }else if(!all(active[[i]]==Inf) && !all(active[[i]]==-Inf)){
-      active[[i]] <- delete.spell(active[[i]], onset[i], terminus[i])
+    #Get existing activity attributes and update as needed
+    active<-lapply(lapply(x$mel[e],"[[","atl"),"[[","active")
+    for(i in seq_along(active)){
+      if(is.infinite(onset[i]) && is.infinite(terminus[i])){
+        active[[i]]<-matrix(c(Inf, Inf),1,2)
+      }else if(is.null(active[[i]])){
+        if(is.infinite(onset[i]))
+          active[[i]]<-matrix(c(terminus[i],Inf),1,2)
+        else if (is.infinite(terminus[i]))
+          active[[i]]<-matrix(c(-Inf,onset[i]),1,2)
+        else
+          active[[i]]<-matrix(c(-Inf,terminus[i],onset[i],Inf),2,2)
+      }else if(!all(active[[i]]==Inf) && !all(active[[i]]==-Inf)){
+        active[[i]] <- delete.spell(active[[i]], onset[i], terminus[i])
+      }
     }
+    set.edge.attribute(x=x,attrname="active",value=active,e=e)
   }
-
-  xn <- deparse(substitute(x))
-  ev <- parent.frame()
-  set.edge.attribute(x=x,attrname="active",value=active,e=e)
-  if(exists(xn, envir = ev))
-    on.exit(assign(xn, x, pos = ev))
-  invisible(set.nD.class(x))
+  
+  set.nD.class(x)
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
 }
 
 
@@ -278,7 +291,10 @@ deactivate.edges<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
 #time at the appropriate mark.  Vertices without an "active" attribute are given
 #one.
 deactivate.vertices<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
-                               v=seq_len(network.size(x))){
+                               v=seq_len(network.size(x)), deactivate.edges=FALSE){
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+
   # checks for proper inputs
   if(!is.network(x)) 
     stop("deactivate.vertices requires an argument of class network.\n")
@@ -309,49 +325,125 @@ deactivate.vertices<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
 
   # preliminaries
   v <- v[!sapply(x$val[v], is.null)]  #Filter out non-vertices
-  if(length(v)==0) return(invisible(set.nD.class(x)))
-  if(!is.null(at)) {
-    onset <- terminus <- rep(at, length=length(v))
-  } else if (!is.null(onset)) {
-    onset <- rep(onset, length=length(v))
-    if(!is.null(terminus))
-      terminus <- rep(terminus, length=length(v))
-    else if (!is.null(length))
-      terminus <- onset + rep(length, length=length(v))
-  } else {
-    if (is.null(terminus)) {
-      onset <- terminus <- rep(Inf, length=length(v))
-    }else {
-      terminus <- rep(terminus, length=length(v))
-      onset <- terminus - rep(length, length=length(v))
+  if(length(v) > 0) {
+    if(!is.null(at)) {
+      onset <- terminus <- rep(at, length=length(v))
+    } else if (!is.null(onset)) {
+      onset <- rep(onset, length=length(v))
+      if(!is.null(terminus))
+        terminus <- rep(terminus, length=length(v))
+      else if (!is.null(length))
+        terminus <- onset + rep(length, length=length(v))
+    } else {
+      if (is.null(terminus)) {
+        onset <- terminus <- rep(Inf, length=length(v))
+      }else {
+        terminus <- rep(terminus, length=length(v))
+        onset <- terminus - rep(length, length=length(v))
+      }
+    }
+    if(any(onset>terminus))
+      stop("Onset times must precede terminus times in deactivate.vertices.\n")
+
+    #Get existing activity attributes and update as needed
+    active<-lapply(x$val[v],"[[","active")
+    for(i in seq_along(active)){
+      if(is.infinite(onset[i]) && is.infinite(terminus[i])){
+        active[[i]]<-matrix(c(Inf, Inf),1,2)
+      }else if(is.null(active[[i]])){
+        if(is.infinite(onset[i]))
+          active[[i]]<-matrix(c(terminus[i],Inf),1,2)
+        else if (is.infinite(terminus[i]))
+          active[[i]]<-matrix(c(-Inf,onset[i]),1,2)
+        else
+          active[[i]]<-matrix(c(-Inf,terminus[i],onset[i],Inf),2,2)
+      }else if(!all(active[[i]]==Inf) && !all(active[[i]]==-Inf)){
+        active[[i]] <- delete.spell(active[[i]], onset[i], terminus[i])
+      }
+    }
+    set.vertex.attribute(x=x,attrname="active",value=active,v=v)
+  }
+  
+  # deactivate the associated edges, if user wants
+  if (deactivate.edges) {
+    e = NULL
+    for (vert in v) {
+      e = c(e, get.edgeIDs.active(x, v=vert, onset=onset, terminus=terminus, 
+                                  length=length, at=at, neighborhood="combined"))
+    }
+    if (length(e) > 0) {
+      deactivate.edges(x, onset=onset, terminus=terminus, length=length, at=at, e=unique(e))
     }
   }
-  if(any(onset>terminus))
-    stop("Onset times must precede terminus times in deactivate.vertices.\n")
+  
+  set.nD.class(x)
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
+}
 
-  #Get existing activity attributes and update as needed
-  active<-lapply(x$val[v],"[[","active")
-  for(i in seq_along(active)){
-    if(is.infinite(onset[i]) && is.infinite(terminus[i])){
-      active[[i]]<-matrix(c(Inf, Inf),1,2)
-    }else if(is.null(active[[i]])){
-      if(is.infinite(onset[i]))
-        active[[i]]<-matrix(c(terminus[i],Inf),1,2)
-      else if (is.infinite(terminus[i]))
-        active[[i]]<-matrix(c(-Inf,onset[i]),1,2)
-      else
-        active[[i]]<-matrix(c(-Inf,terminus[i],onset[i],Inf),2,2)
-    }else if(!all(active[[i]]==Inf) && !all(active[[i]]==-Inf)){
-      active[[i]] <- delete.spell(active[[i]], onset[i], terminus[i])
-    }
-  }
 
-  xn <- deparse(substitute(x))
+# adds new edges, active at the given time
+add.edges.active <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL, tail, head) {
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
   ev <- parent.frame()
-  set.vertex.attribute(x=x,attrname="active",value=active,v=v)
-  if(exists(xn, envir = ev))
-    on.exit(assign(xn, x, pos = ev))
-  invisible(set.nD.class(x))
+
+  if(!is.network(x))
+    stop("add.edges.active requires an argument of class network.\n")
+  if(!is.numeric(tail) || !is.numeric(head))
+    stop("The vertex ID's given in 'tail' and 'head' must be a numeric vector in add.edges.active.\n")
+  if(min(tail) < 1 || max(tail) > network.size(x))
+    stop("Illegal vertex in 'tail' vector in add.edges.active .\n")
+  if(min(head) < 1 || max(head) > network.size(x))
+    stop("Illegal vertex in 'head' vector in add.edges.active .\n")
+
+  n = max(length(tail), length(head))
+  if(length(tail) != length(head)) {
+    tail = rep(tail, length=n)
+    head = rep(head, length=n)
+  }
+
+  add.edges(x, tail, head)
+  activate.edges(x, onset, terminus, length, at, e=seq(x%n%"mnext"-n, x%n%"mnext"-1))
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
+}
+
+
+# adds new vertices, active at the given time
+add.vertices.active <- function(x, nv, onset=NULL, terminus=NULL, length=NULL, at=NULL) {
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+  if(!is.network(x))
+    stop("add.vertices.active requires an argument of class network.\n")
+  if(!is.numeric(nv))
+    stop("The number of vertices given in 'nv' must be numeric in add.verices.active.\n")
+
+  add.vertices(x, nv)
+  activate.vertices(x, onset, terminus, length, at, v=seq(x%n%"n"-nv+1, x%n%"n"))
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
+}
+
+
+# pulls out all of the times at which acitvity changes
+get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore.inf=TRUE) {
+  if(!is.network(x))
+    stop("get.change.times requires an argument of class network.\n")
+  if(!is.logical(vertex.activity) | !is.logical(edge.activity))
+    stop("get.change.times requires that vertex.activity and edge.activity be logicals.\n")
+  times = numeric(0)
+  if(edge.activity)
+    times = c(times, get.edge.attribute(x$mel, "active"))
+  if(vertex.activity)
+    times = c(times, get.vertex.attribute(x, "active"))
+  if(ignore.inf)  
+  times = sort(unique(times[!is.infinite(times)]))
+  else
+  times = sort(unique(times))
+  times
 }
 
 
@@ -437,6 +529,21 @@ get.neighborhood.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=N
     }
   }
   neigh
+}
+
+# wrapper functions to return activity matrices of edges and vertices
+get.edge.activity <- function(x, e=1:length(x$mel)) {
+  if(length(x$mel)>0) 
+    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+      stop("Illegal edge in get.edge.activity.\n")
+  get.edge.attribute(x$mel[e], "active", unlist=FALSE)
+}
+
+get.vertex.activity <- function(x, v=1:network.size(x)) {
+  if((min(v) < 1) || (max(v) > network.size(x))) 
+    stop("Illegal vertex in get.vertex.activity.\n")  
+  vam=get.vertex.attribute(x, "active", unlist=FALSE)
+  vam[v]
 }
 
 
@@ -662,6 +769,88 @@ network.size.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL,
 }
 
 
+#--------------------------------------------------------------
+# this function removes the activity matrices for a given
+# set of edges.
+#
+# @param
+#    x: a networkDynamic or network object
+#    e: the edges whose spell matrices are to be deleted;
+#       default=all
+#
+# @return:
+#    the networkDynamic object without the spell matrices of 'e'
+#------------------------------------------------------------------
+delete.edge.activity <- function(x, e=seq_along(x$mel)) {
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+  
+  if(!is.network(x))
+    stop("The remove.activity function requires that x be a network object.\n")
+  if(!is.vector(e) || !is.numeric(e))
+    stop("Edge ID's, e, must be a numeric vector in remove.activity.\n")
+  if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+    stop("Illegal edge in remove.activity argument e.\n")
+
+  # if deleting all edges, can use network's delete.edge.attribute
+  # function, otherwise need to manually remove activity matrices.
+  if (length(e) == length(x$mel)) {
+    delete.edge.attribute(x, "active")
+  } else {
+    leave.active = setdiff(seq_along(x$mel), e)
+    leave.active = leave.active[!sapply(x$mel[leave.active], is.null)]  # filter out non-edges
+    left.activity = lapply(lapply(x$mel[leave.active], "[[", "atl"), "[[", "active")
+    delete.edge.attribute(x, "active")
+    set.edge.attribute(x, "active", left.activity, leave.active)
+  }
+  
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
+}
+
+
+#--------------------------------------------------------------
+# this function removes the activity matrices for a given
+# set of vertices.
+#
+# @param
+#    x: a networkDynamic or network object
+#    v: the vertices whose spell matrices are to be deleted;
+#       default=all
+#
+# @return:
+#    the networkDynamic object without the spell matrices of 'v'
+#------------------------------------------------------------------
+delete.vertex.activity <- function(x, v=seq_len(network.size(x))) {
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+  
+  if(!is.network(x))
+    stop("The remove.activity function requires that x be a network object.\n")
+  if(!is.vector(v) || !is.numeric(v))
+    stop("Vertex ID's, v, must be a numeric vector in remove.activity.\n")
+  if((min(v) < 1) || (max(v) > network.size(x))) 
+    stop("Illegal vertex in remove.activity argument v.\n")
+    
+  # if deleting all vertices, can use network's delete.vertex.attribute
+  # function, otherwise need to manually remove activity matrices.
+  if (length(v) == network.size(x)) {
+    delete.vertex.attribute(x, "active")
+  } else {
+    leave.active = setdiff(seq_along(x$val), v)
+    leave.active = leave.active[!sapply(x$val[leave.active], is.null)]  #Filter out non-vertices
+    left.activity = lapply(x$val[leave.active], "[[", "active")
+    delete.vertex.attribute(x, "active")
+    set.vertex.attribute(x, "active", left.activity, leave.active)
+  }
+
+  if(exists(xn, envir=ev))
+    on.exit(assign(xn, x, pos=ev))
+  invisible(x)  
+}
+
+  
 #--------------------------------------------------------------
 # this is a helper function to insert a single valid spell.
 # valid means that (i) onset <= terminus and (ii) onset != Inf

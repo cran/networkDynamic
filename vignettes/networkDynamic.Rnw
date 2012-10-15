@@ -6,6 +6,7 @@
 %\VignetteIndexEntry{networkDynamic Example}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 <<foo,include=FALSE,echo=FALSE>>=
 options(keep.source = TRUE, width = 60)
@@ -16,7 +17,7 @@ foo <- packageDescription("networkDynamic")
 \author{Ayn Leslie-Cook, Zack Almquist, Pavel N. Krivitsky,\\Skye Bender-deMoll, David R. Hunter\\ Martina Morris, Carter T. Butts}
 \maketitle
 
-THIS IS A DRAFT. Not all authors have approved, and in some situations the package gives incorrect results.
+THIS IS A DRAFT. The package is not complete.
 
 \tableofcontents
 
@@ -39,22 +40,21 @@ Note: Although \verb@networkDynamic@ shares some of the goals (and authors) of t
 \section{How to start and end relationships easily}
 A very quick condensed example of starting and ending edges to show why it is useful and some of the alternate syntax options.
 \subsection{Activating edges}
-The standard assumption in the \verb@network@ package and most sociomatrix representations of networks is that an edge between two vertices is either present or absent.  However, many of the phenomena that we wish to describe with networks are dynamic rather than static processes, having a set of edges which change over time.  In some situations the edge connecting a dyad may break and reform multiple times as a relationship is ended and re-established.  The \verb@networkDynamic@ package adds the concept of `activation spells' for each element of a \verb@network@ object. Edges are considered to be present in a network when they are active, and treated as absent during periods of inactivity.  After a relationship has been defined using the normal syntax or network conversion utilities, it can be explicitly activated for a specific time period using the \verb@activate.edges@ methods.
+The standard assumption in the \verb@network@ package and most sociomatrix representations of networks is that an edge between two vertices is either present or absent.  However, many of the phenomena that we wish to describe with networks are dynamic rather than static processes, having a set of edges which change over time.  In some situations the edge connecting a dyad may break and reform multiple times as a relationship is ended and re-established.  The \verb@networkDynamic@ package adds the concept of `activation spells' for each element of a \verb@network@ object. Edges are considered to be present in a network when they are active, and treated as absent during periods of inactivity.  After a relationship has been defined using the normal syntax or network conversion utilities, it can be explicitly activated for a specific time period using the \verb@activate.edges@ methods. Alternatively, edges can be added and activated simultaneously with the \verb@add.edges.active@ helper function.
 
 <<trivial_triangle,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
 library(networkDynamic)          # load the dynamic extensions
 triangle <- network.initialize(3)  # create a toy network
 add.edge(triangle,1,2)    # add an edge between vertices 1 and 2
 add.edge(triangle,2,3)               # add a more edges
-add.edge(triangle,3,1)
 activate.edges(triangle,at=1) # turn on all edges at time 1 only
 activate.edges(triangle,onset=2, terminus=3, 
                e=get.edgeIDs(triangle,v=1,alter=2))
-activate.edges(triangle,onset=4, length=2, 
-               e=get.edgeIDs(triangle,v=2,alter=3)) 
+add.edges.active(triangle,onset=4, length=2,tail=3,head=1)
+class(triangle)
 @
 
-The \verb@onset@ and \verb@terminus@ parameters giving the starting and ending point for the activation period (more on this and the \verb@at@ syntax later). Notice that the method refers to the relationship using the \verb@e@ argument to specify the ids of the edges to activate. To be safe, we are looking up the ids using the \verb@get.edgeIDs@ method with the \verb@v@ and \verb@alter@ arguments indicating the ids of the vertices involved in the edge. After the activity spells have been defined for a network, it is possible to extract views of the network at arbitrary points in time using the \verb@network.extract@ function in order to calculate traditional graph statistics. 
+The \verb@onset@ and \verb@terminus@ parameters give the starting and ending point for the activation period (more on this and the \verb@at@ syntax later). When a network object has dynamic elements added, it also gains the \verb@networkDynamic@ class, so it is both a \verb@network@ and \verb@networkDynamic@ object. Notice that the method refers to the relationship using the \verb@e@ argument to specify the ids of the edges to activate. To be safe, we are looking up the ids using the \verb@get.edgeIDs@ method with the \verb@v@ and \verb@alter@ arguments indicating the ids of the vertices involved in the edge. After the activity spells have been defined for a network, it is possible to extract views of the network at arbitrary points in time using the \verb@network.extract@ function in order to calculate traditional graph statistics. 
 
 
 \subsection{Extracting a network}
@@ -132,8 +132,8 @@ There are many possible ways of representing change in an edgeset over time. Sev
 This package uses the spell representation, and stores the spells as perfectly normal but specially named \verb@active@ attributes on the network. These attributes are a 2-column spell matrix in which the first column gives the onset, the second the terminus, and each row defines an additional activity spell for the network element. For more information, \verb@?activity.attribute@. As an example, to peek at the spells defined for the vertices:
 
 <<triangle_get_times,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
-get.vertex.attribute(triangle,'active',unlist=F) # vertex spells
-get.edge.attribute(triangle$mel,'active',unlist=F) # edge spells
+get.vertex.activity(triangle) # vertex spells
+get.edge.activity(triangle) # edge spells
 @
 
 Notice that the first edge has a 2-spell matrix where the first spell extends from time 1 to time 1 (a zero-duration or instantaneous spell), and the second from time 2 to time 3 (a `unit length` spell. More on this below). The third edge has the interesting special spell \verb@c(Inf,Inf)@ defined to mean `never active` which was produced when we deleted the activity associated with the 3rd edge.   
@@ -201,6 +201,34 @@ get.neighborhood.active(triangle, onset=2, length=1,v=1)
 is.adjacent.active(triangle,vi=1,vj=2,onset=2,length=1)
 @
 These methods of course accept the same additional arguments as their \verb@network@ counterparts.
+\subsection{Basic descriptives}
+In some contexts, especially writing simulations on a network that can work in both discrete and continuous time, it may be important to know all the time points at which the structure of the network changes.  The package includes a function \verb@get.change.times@ that can return a list of times for the entire network, or edges and vertices independently:
+
+<<get_change_times,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
+get.change.times(triangle)
+get.change.times(triangle,vertex.activity=FALSE)
+get.change.times(triangle,edge.activity=FALSE)
+@
+
+We have also implemented dynamic versions of the basic network functions \verb@network.size@ and \verb@network.edgecount@ which accept the standard activity parameters:
+
+<<size_and_edgecount,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
+network.size.active(triangle,onset=2,terminus=3)
+network.edgecount.active(triangle,at=5)
+@
+
+\subsection{Wiping the slate: removing activity information}
+Most \verb@network@ methods will ignore the timing information on a \verb@networkDynamic@ object. However, there may be situations where it is desireable to remove all of the timing information attached to a \verb@networkDynamic@ object.  (Note: this is not the same thing as deactivating elements of the network.) This can be done using the \verb@delete.edge.activity@ and \verb@delete.vertex.activity@ functions which do accept arguments to specifiy which elements should have the timing information deleted.
+
+<<delete_times,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
+delete.edge.activity(triangle)
+delete.vertex.activity(triangle)
+get.change.times(triangle)
+@
+
+Although the timing information of the edges and/or vertices may be removed,  other \verb@networkDynamic@ methods will assume activity or inactivity across all time points, based on the argument \verb@active.default@.
+
+
 
 \subsection{Differences between `any' and `all' aggregation rules}
 In addition to the point-based (\verb@at@ syntax) or unit interval (\verb@length=1@) activity tests and extraction operations used in most examples so far, the methods also support the idea of a `query spell' specified using the same onset and terminus syntax. So it is also possible (assuming it makes sense for the network being studied) to use \verb@length=27.52@ or \verb@onset=0, terminus=256@ Querying with a time range does raise an issue: how should we handle situations where edges or vertices have spells that begin or end part way through the query spell? Although other potential rules have been proposed, the methods currently include a \verb@rule@ argument that can take the values of \verb@any@ (the default) or \verb@all@. The former returns elements if they are active for any part of the query spell, and the later only returns elements if they are active for the entire range of the query spell.  
@@ -321,6 +349,28 @@ Clearly an essential feature of dynamic networks is the ability to express time-
 
 \section{Other Coming Attractions}
 ndtv: Network Dynamic Temporal Visualization package -- like TV for your networks. The \verb@ndtv@ package creates network animations of dynamic networks stored in the \verb@networkDynamic@ format. Provides the tools developed in \citep*{dynamicNetwork} but with R methods for building, controling, and rendering out animations. 
+
+\section{Vocabulary definitions}
+This is a list of terms and common function arguments giving their special meanings within the context of the \verb@networkDynamic@ package.
+\begin{description}
+\item [spell] bounded interval of time describing activity period of a network element
+\item [onset] beginning of spell
+\item [terminus] end of a spell
+\item [length] the duration of a spell
+\item [at] a single time point, a spell with zero length where onset=terminus
+\item [start] begining (least time) of observation period (or series of spells)
+\item [end] end (greatest time) of obeservation period (or series of spells)
+\item [spell list or spell matrix] a means of describing the activity of a network or network element using a matrix in which one column contains the onsets and another the termini of each spell
+\item [toggle list] a means of describing the activity of a network or network element using a list of times at which an element changed state (`toggled')
+\item [onset-censord] when elements of a dynamic network are known to be active before start of the defined observation period, even if the onset of the spell is not known.
+\item [terminus-censored] when elements of a dynamic network are known to be active after the end of the defined observation period, even if the terminus of the spell is not known.
+\end{description}
+
+\section{Complete package function listing}
+Below is a reference list of all the public functions included in the package \verb@networkDynamic@ 
+<<package_listing,include=TRUE,echo=TRUE>>=options(keep.source = TRUE, width = 60)
+cat(ls("package:networkDynamic"),sep="\n")
+@
 
 
 \begin{thebibliography}{}

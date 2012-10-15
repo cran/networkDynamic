@@ -172,24 +172,25 @@ cat("testing network.dynamic.check ... ")
 cnet0 <- network.initialize(5)
 add.edges(cnet0, c(1,3,5), c(4,4,2))
 check0 = network.dynamic.check(cnet0, verbose=F)
-c0 = (length(check0$problem.vertexIDs)==0 &&
-      length(check0$problem.edgeIDs)==0)
+c0 = (sum(!check0$vertex.checks)==0 &&
+      sum(!check0$edge.checks)==0)
 
 # a network with complete inactivity specified
 cnet1 <- cnet0
 deactivate.edges(cnet1)
 deactivate.vertices(cnet1)
 check1 = network.dynamic.check(cnet1, verbose=F)
-c1 = (length(check1$problem.vertexIDs)==0 &&
-      length(check1$problem.edgeIDs)==0)
+c1 = (sum(!check1$vertex.checks)==0 &&
+      sum(!check1$edge.checks)==0)
 
 # a network that is A-okay
 cnet2 <- cnet1
 activate.edges(cnet2, 10,20, e=1:2)
 activate.vertices(cnet2, 0,30)
 check2 = network.dynamic.check(cnet2, verbose=F)
-c2 = (length(check2$problem.vertexIDs)==0 &&
-      length(check2$problem.edgeIDs)==0)
+c2 = (sum(!check2$vertex.checks)==0 &&
+      sum(!check2$edge.checks)==0 &&
+      sum(!check2$dyad.checks)==0)
 
 # a network with illegal node activity matrices
 cnet3 <- cnet2
@@ -197,8 +198,8 @@ cnet3$val[[2]]$active <- matrix(c(10,0,20,5),2,2)
 cnet3$val[[3]]$active <- matrix(c(10,15,20,25),2,2)
 cnet3$val[[4]]$active <- matrix(c(10,40,20,30),2,2)
 check3 = network.dynamic.check(cnet3, verbose=F)
-c3 = (all(check3$problem.vertexIDs==c(2,3,4)) &&
-      length(check3$problem.edgeIDs)==0)
+c3 = (all(check3$vertex.checks==c(T,F,F,F,T)) &&
+      sum(!check3$edge.checks)==0)
 
 # a network with illegal edge activity matrices
 cnet4 <- cnet2
@@ -206,8 +207,8 @@ cnet4$mel[[1]]$atl$active <- matrix(c(10,0,20,5),2,2)
 cnet4$mel[[2]]$atl$active <- matrix(c(10,15,20,25),2,2)
 cnet4$mel[[3]]$atl$active <- matrix(c(10,40,20,30),2,2)
 check4 = network.dynamic.check(cnet4, verbose=F)
-c4 = (length(check4$problem.vertexIDs)==0 &&
-      all(check4$problem.edgeIDs==c(1,2,3)))
+c4 = (sum(!check4$vertex.checks)==0 &&
+      sum(check4$edge.checks)==0)
 
 # a network with active edges that have inactive end points
 cnet5 <- cnet1
@@ -215,23 +216,26 @@ activate.edges(cnet5,10,20)
 activate.vertices(cnet5,0,3, v=c(1,3,4))
 activate.vertices(cnet5,0,30, v=c(2,5))
 check5 = network.dynamic.check(cnet5, verbose=F)
-c5 = (length(check5$problem.vertexIDs)==0 &&
-      all(check5$problem.edgeIDs==c(1,2)))
+c5 = all(check5$dyad.checks==c(F,F,T))
+
 
 # a network with multiple problems
 cnet6 <- cnet5
 cnet6$val[[2]]$active <- matrix(c(10,0,20,5),2,2)
 cnet6$mel[[3]]$atl$active <- matrix(c(10,15,20,25),2,2)
 check6 = network.dynamic.check(cnet6, verbose=F)
-c6 = (all(check6$problem.vertexIDs==2) &&
-      all(check6$problem.edgeIDs==c(1,2,3)))
+c6 = (check6$vertex.checks[2]==F &&
+      check6$edge.checks[3]==F)
+
 
 # a network with a point-activated edge
 cnet7 <- network.initialize(2)
 cnet7[1,2]<-1
 activate.edges(cnet7,at=1)
 check7<-network.dynamic.check(cnet7)
-c7 <- length(check7$problem.edgeIDs)==0
+c7 <- (check7$vertex.checks==c(T,T) &&
+       check7$edge.checks==T &&
+       check7$dyad.checks==T)
 
 c.tests = paste("c", seq(1,7), sep="")
 c.results= sapply(c.tests, function(x){eval(parse(text=x))})

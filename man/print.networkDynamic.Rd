@@ -32,14 +32,14 @@ Prints out some very basic descriptive stats about the network's dynamics, and t
 Prints some info about the number of time events in a networkDynamic object, then calls print.network
 }
 \value{
- returns a dynamicNetwork object?
+ Returns the networkDynamic object passed to the function.
 }
 
 \author{
 Pavel
 }
 \note{
-not fully implemented
+Only prints out the network information without any dynamic data.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -47,7 +47,14 @@ not fully implemented
 \seealso{
  \code{\link{print.network}}
 }
-
+\examples{
+  library(networkDynamic)
+  data(flo)
+  net1 <- network(flo)
+  activate.edges(net1, onset=1:20, terminus=101:120)
+  activate.vertices(net1, at=seq(2,32,2))
+  print(net1)
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

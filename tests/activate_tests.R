@@ -2057,5 +2057,135 @@ if(any(!f.results)){
              bad.tests))
 }
 
+# testing deactivate edges associated with the deactivated vertex
+# ---------------
+# deactivate associated edges when deactivating a vertex
+# all vertices at once
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+activate.edges(net,onset=1,terminus=Inf,e=1)
+activate.edges(net,onset=2,terminus=3,e=2)
+activate.vertices(net, onset=1, terminus=Inf)
+deactivate.vertices(net, onset=2, terminus=3, deactivate.edges=T)
+dv.test = as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(1,2,1,2, 3,Inf,1,2, Inf,Inf,2,3), byrow=T, ncol=4))) {
+  stop('NO')
+}
+
+# deactivate associated edges when deactivating a vertex
+# one vertex at a time
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+activate.edges(net,onset=1,terminus=Inf,e=1)
+activate.edges(net,onset=2,terminus=3,e=2)
+activate.vertices(net, onset=1, terminus=Inf)
+deactivate.vertices(net, onset=2, terminus=3, v=1, deactivate.edges=T)
+dv.test = as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(1,2,1,2, 3,Inf,1,2, 2,3,2,3), byrow=T, ncol=4))) {
+  stop('NO')
+}
+
+
+# deactivate associated edges when deactivating a vertex
+# no edge activity
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+activate.vertices(net, onset=1, terminus=Inf)
+deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
+dv.test = as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(-Inf,2,1,2, 3,Inf,1,2, -Inf,2,2,3, 3, Inf, 2, 3), byrow=T, ncol=4))) {
+  stop('NO')
+}
+
+# deactivate associated edges when deactivating a vertex
+# no active edges (Inf, Inf) spells
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+activate.vertices(net, v=2, onset=1, terminus=Inf)
+deactivate.edges(net, e=1, onset=-Inf, terminus=Inf)
+deactivate.edges(net, e=2, onset=-Inf, terminus=Inf)
+deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
+dv.test = as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(Inf,Inf,1,2, Inf,Inf,2,3), byrow=T, ncol=4))) {
+  stop('NO')
+}
+
+# deactivate associated edges when deactivating a vertex
+# no active vertices. It will still run deactivate.edges on the vertices!
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+deactivate.vertices(net, onset=-Inf, terminus=Inf)
+deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
+dv.test = as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(-Inf,2,1,2, 3,Inf,1,2, -Inf,2,2,3, 3, Inf, 2, 3), byrow=T, ncol=4))) {
+  stop('NO')
+}
+
+
+cat("ok\n")
+
+#------------------- DELETE.ACTIVITY TESTS ------------------------
+# Notes:
+#  -- given the seriously limited time that I am working this
+#     summer, this testing is minimal, at best. Feel free to add
+#     to this if you have time.  --alc
+#-----------------------------------------------------------------
+
+cat("testing delete.*.activity ... ")
+
+# a case with no edges
+gnet1 = network.initialize(5)
+delete.edge.activity(gnet1)
+active1 = unlist(lapply(gnet1$val, "[[", "active"))
+g1 = is.null(active1)
+activate.vertices(gnet1, at=2)
+delete.vertex.activity(gnet1, v=c(1,3,5))
+active2 = unlist(lapply(gnet1$val, "[[", "active"))
+g2 = (length(active2)==4 & all(active2==2))
+
+# a case with missing edges
+data(flo)
+gnet3 = network(flo)
+gnet3[9,16] = 0  # makes edge 39 NULL
+activate.edges(gnet3, 2, 3)
+delete.edge.activity(gnet3, e=1:37)
+active3 = unlist(lapply(lapply(gnet3$mel, "[[", "atl"), "[[", "active"))
+g3 = all(active3 == c(2,3,2,3))
+delete.edge.activity(gnet3)
+active4 = unlist(lapply(lapply(gnet3$mel, "[[", "atl"), "[[", "active"))
+g4 = is.null(active4)
+
+# a more typical case
+gnet5 = network(flo)
+activate.edges(gnet5, at = 1:40)
+activate.vertices(gnet5, at = 101:117)
+gnet6 = gnet7 = gnet5
+delete.edge.activity(gnet5)
+delete.vertex.activity(gnet5)
+delete.vertex.activity(gnet6, v=1:8)
+delete.edge.activity(gnet7, e=seq(2,40,2))
+active5 = c(unlist(lapply(lapply(gnet5$mel, "[[", "atl"), "[[", "active")),
+            unlist(lapply(gnet5$val, "[[", "active")))
+active6 = c(unlist(lapply(lapply(gnet6$mel, "[[", "atl"), "[[", "active")),
+            unlist(lapply(gnet6$val, "[[", "active")))
+active7 = c(unlist(lapply(lapply(gnet7$mel, "[[", "atl"), "[[", "active")),
+            unlist(lapply(gnet7$val, "[[", "active")))
+g5 = (is.null(active5))
+g6 = all(active6 == c(rep(1:40, each=2), rep(109:116, each=2))) 
+g7 = all(active7 == c(rep(seq(1,39,2), each=2), rep(101:116, each=2)))
+
+g.tests = paste("g", seq(1,7), sep="")
+g.results= sapply(g.tests, function(x){eval(parse(text=x))})
+if(any(!g.results)){
+  bad.tests = paste("g", which(!g.results), sep="", collapse=" ")
+  stop(paste("remove.activity is incorrectly removing activity matrices in tests",
+             bad.tests))
+}
+
 cat("ok\n")
 

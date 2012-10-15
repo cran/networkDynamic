@@ -8,6 +8,66 @@
 require(networkDynamic)
 
 
+#---------------- GET.CHANGE.TIMES TESTS ------------------------
+# Notes:
+#  -- minimal level of testing done here. sorry -- alc 6/28/12
+#-------------------------------------------------------------------
+
+cat("testing get.change.times ... ")
+
+# a case with no change times
+data(flo)
+net1 = network(flo)
+t1 = get.change.times(net1)
+a1 = (length(t1) == 0)
+
+# a case with only edge change times
+activate.edges(net1, onset=1:20, terminus=101:120)
+t2 = get.change.times(net1, edge.activity=F)
+t3 = get.change.times(net1)
+a2 = (length(t2) == 0)
+a3 = all(t3==c(1:20, 101:120))
+
+# a case with only vertex change times
+net2 = network(flo)
+activate.vertices(net2, at=seq(2,32,2))
+t4 = get.change.times(net2, vertex.activity=F)
+t5 = get.change.times(net2)
+a4 = (length(t4) == 0)
+a5 = all(t5 == seq(2,32,2))
+
+# a case with both types of change times
+activate.edges(net2, at=60:99)
+t6 = get.change.times(net2, vertex.activity = F)
+t7 = get.change.times(net2, edge.activity = F)
+t8 = get.change.times(net2)
+a6 = all(t6 == 60:99)
+a7 = all(t7 == seq(2,32,2))
+a8 = all(t8 == c(seq(2,32,2), 60:99))
+
+# a case with infinity
+deactivate.edges(net1)
+activate.edges(net2)
+t9 = get.change.times(net1)
+t10 = get.change.times(net2)
+t11 = get.change.times(net1, ignore.inf=F)
+t12 = get.change.times(net2, ignore.inf=F)
+a9 = (length(t9) == 0)
+a10 = all(t10 == seq(2,32,2))
+a11 = is.infinite(t11)
+a12 = all(t12 == c(-Inf,seq(2,32,2),Inf))
+a.tests = paste("a", seq(1,12), sep="")
+a.results= sapply(a.tests, function(x){eval(parse(text=x))})
+if(any(!a.results)){
+  bad.tests = paste("a", which(!a.results), sep="", collapse=" ")
+  stop(paste("get.change.times is returning incorrect times in tests",
+             bad.tests))
+}
+
+
+cat("ok\n")
+
+
 #---------------- GET.EDGEIDS.ACTIVE TESTS ------------------------
 # Notes:
 #  --this function is basicallly 2 lines, which call functions that
@@ -107,7 +167,7 @@ if(any(!c.results)){
              bad.tests))
 }
 
-cat("ok\n")
+
 
 
 
