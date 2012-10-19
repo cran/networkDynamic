@@ -16,31 +16,47 @@
   Checks a networkDynamic object for any activity information that is not correctly specified.
 }
 \usage{
-network.dynamic.check(x, verbose = TRUE)
+network.dynamic.check(x, verbose = TRUE, complete = TRUE)
 is.networkDynamic(x)
 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{ an object, hopefully of class \code{networkDynamic}. }
-  \item{verbose}{ logical; should output messages be printed to the user? }
+  \item{verbose}{ logical; should output messages be printed to the
+    user? }
+  \item{complete}{ logical; should a complete test be ran, including
+    checks of the activity matrices for edges and vertices, versus a
+    check of only edge activity invovling non-active vertices}
 }
 \details{
- Currently, \code{network.dynamic.check} runs three types of checks on an input object:
-   \enumerate{
-   \item{Vertex spell matrices (if any) are checked for legality;}
-   \item{Edge spell matrices (if any) are checked for legality;}
-   \item{Incident vertices of active edges (if any) are checked to ensure that they are also active during the specified period(s).}
-   }
- The IDs of vertices or edges failing any of these checks are returned.
- 
- \code{is.networkDynamic} checks if its argument has the class 'networkDynamic'.
+  Currently, \code{network.dynamic.check} runs two types of checks on an input object:
+  \enumerate{
+    \item{If a complete test is run, vertex spell matrices and edge spell
+      matrices (if any) are checked for legality, specifically these are
+      checked for correct dimensionality and proper spell ordering.}
+    \item{If vertex and edge spell matrices are correctly specified or
+      assumed to be using \code{complete=FALSE}, incident vertices of
+      active edges (if any) are checked to ensure that they are also
+      active during the specified period(s).}
+  }
+  If spell matrices are only acted upon by network or
+  networkDynamic methods, there is no need to run a complete test -
+  correct dimensionality and spell ordering are guaranteed.
+  
+  \code{is.networkDynamic} checks if its argument has the class 'networkDynamic'.
 }
 \value{
-  For \code{network.dynamic.check}: a list with elements
-  \item{problem.vertexIDs }{IDs of vertices with incorrect activity settings.}
-  \item{problem.edgeIDs }{IDs of edges with incorrect activity settings.}
-  
+  For \code{network.dynamic.check}: A list of logical vectors, one for
+  each network component checked: 
+  \itemize{
+    \item{vertex.checks: }{Whether the spell matrix of each vertex (if any)
+      is correctly specified}
+    \item{edge.checks: }{Whether the spell matrix of each edge (if any)
+      is correctly specified}
+    \item{dyad.checks: }{Corresponding to edges, whether the incident vertices
+      of each edge are active when the edge is active}
+  }
   For \code{is.networkDynamic}: a boolean which is true if the class matches
 }
 %\references{ ~put references to the literature/web site here ~ }

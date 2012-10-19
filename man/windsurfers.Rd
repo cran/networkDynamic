@@ -76,6 +76,8 @@ intelligence." Journal of Social Biological Structure 11, 415--425.
 }
 \examples{
 data(windsurfers)
+
+data(windsurferPanels)
 }
 
 \keyword{datasets}

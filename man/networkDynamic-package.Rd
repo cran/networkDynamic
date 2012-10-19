@@ -9,7 +9,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \name{networkDynamic-package}
 \alias{networkDynamic-package}
-\alias{networkDynamic}
 \docType{package}
 \title{
 Dynamic Extensions for Network Objects
@@ -21,7 +20,7 @@ Simple interface routines to facilitate the handling of dynamic network objects 
 \tabular{ll}{
 Package: \tab networkDynamic\cr
 Type: \tab Package\cr
-Version: \tab 0.2-0\cr
+Version: \tab 0.3-0\cr
 Date: \tab 2012-02-29\cr
 Depends: \tab network\cr
 License: \tab GPL-3\cr

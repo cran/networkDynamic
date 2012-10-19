@@ -69,3 +69,6 @@ Vladimir Batagelj and Andrej Mrvar (2006): \emph{Pajek datasets}
 \cr
 \url{http://vlado.fmf.uni-lj.si/pub/networks/data/} 
 }
+\examples{
+data(newcomb)
+}

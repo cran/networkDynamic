@@ -7,7 +7,21 @@
 #
 #  Copyright 2012 the statnet development team
 ######################################################################
+
+# turns a network and toggle list into a list of edge spells
+# usage
+
+# nw0: network object, with vertices and edges specified
+# changes: toggle list of the form 
+#    time(integer)  tail(vertex.id)  head(vertex.id)
+# start: start time of the network (integer)
+# end: end time of the network (integer)
+# returns a data.frame of the format:
+#    c("start", "end", "tail", "head", "left.censored", "right.censored", "duration")
+
 duration.matrix <- function(nw0, changes, start, end) {
+  if (!("network" %in% class(nw0))) stop("nw0 must be a network object")
+  if (ncol(changes) < 3) stop("changes must provide a list of toggle time, tail, and head")
   edges <- as.edgelist(nw0)
   if(!is.directed(nw0)){
     # The following shouldn't be necessary, but just to be safe:

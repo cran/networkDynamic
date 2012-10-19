@@ -36,8 +36,7 @@ Converts a networkDynamic object into a data frame giving lists of edges and the
   \item{\dots}{possible additional arguments}
 }
 \details{
-Converts a networkDynamic object into a data frame giving lists of edges
-and their activity spells, including whether an activity spell was
+Represents the edge dynamics of a networkDynamic object as a data frame giving lists of edges and their activity spells, including whether an activity spell was
 "censored". If \code{x} has \code{attr}-style attribute \code{"start"},
 it will be used as the left-censoring time and similarly for
 \code{"end"} and right-censoring time.
@@ -45,20 +44,28 @@ it will be used as the left-censoring time and similarly for
 \value{
 A \code{\link{data.frame}} containing timed relational information
 describing the networkDynamic object, having the following columns:
-\item{start, end}{Onset and terminus times of an edge, respectively, if
+\item{onset, terminus}{Onset and terminus times of an edge, respectively, if
   not censored, and left and right censoring times, if censored.}
 \item{tail, head}{Tail and head of the edge.}
-\item{left.censored, right.censored}{TRUE if onset/terminus time is censored.}
+\item{onset.censored, terminus.censored}{TRUE if onset/terminus time is censored.}
+\item{duration}{the duration (terminus-onset) of each spell, evaluated after censoring}
 }
 
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
-
+\seealso{
+See Also as \code{\link{get.edge.activity}},\code{\link{get.vertex.activity}}
+}
 
 \examples{
-# still missing
+net <-network.initialize(3)
+net[1,2]<-1;
+net[2,3]<-1;
+## censoring
+activate.edges(net,onset=1,terminus=Inf,e=1)
+activate.edges(net,onset=2,terminus=3,e=2)
+activate.vertices(net, onset=1, terminus=Inf, v=1)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
