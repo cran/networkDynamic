@@ -5,6 +5,7 @@
 #########################################################################
 
 require(networkDynamic)
+require(testthat)
 
 
 #------------------- ACTIVATE.EDGES TESTS ------------------------
@@ -525,6 +526,9 @@ if(any(!f.results)){
              bad.tests))
 }
 
+# no edges, so should do nothing (but not crash)
+expect_equal(network.edgecount(activate.edges(network.initialize(0))),0)
+
 cat("ok\n")
 
 
@@ -1040,6 +1044,10 @@ if(any(!f.results)){
              bad.tests))
 }
 
+# should do nothing, since no verts to activate
+expect_equal(is.active(activate.vertices(network.initialize(0),at=1),at=1),logical(0))
+
+
 cat("ok\n")
 
 
@@ -1554,6 +1562,8 @@ if(any(!f.results)){
              bad.tests))
 }
 
+expect_equal(network.edgecount.active(deactivate.edges(network.initialize(0))),0)
+
 cat("ok\n")
 
 #------------------- DEACTIVATE.VERTICES TESTS ------------------------
@@ -2067,10 +2077,10 @@ net[2,3]<-1;
 activate.edges(net,onset=1,terminus=Inf,e=1)
 activate.edges(net,onset=2,terminus=3,e=2)
 activate.vertices(net, onset=1, terminus=Inf)
-deactivate.vertices(net, onset=2, terminus=3, deactivate.edges=T)
-dv.test = as.data.frame(net)
-if (!all(dv.test[,1:4] == matrix(c(1,2,1,2, 3,Inf,1,2, Inf,Inf,2,3), byrow=T, ncol=4))) {
-  stop('NO')
+deactivate.vertices(net, onset=2, terminus=3, deactivate.edges=TRUE)
+dv.test <- as.data.frame(net)
+if (!all(dv.test[,1:4] == matrix(c(1,2,1,2, 3,Inf,1,2), byrow=T, ncol=4))) {
+  stop('deactivate.vertices did not perform as expected when deactivate.edges=TRUE')
 }
 
 # deactivate associated edges when deactivating a vertex
@@ -2081,10 +2091,10 @@ net[2,3]<-1;
 activate.edges(net,onset=1,terminus=Inf,e=1)
 activate.edges(net,onset=2,terminus=3,e=2)
 activate.vertices(net, onset=1, terminus=Inf)
-deactivate.vertices(net, onset=2, terminus=3, v=1, deactivate.edges=T)
-dv.test = as.data.frame(net)
+deactivate.vertices(net, onset=2, terminus=3, v=1, deactivate.edges=TRUE)
+dv.test <- as.data.frame(net)
 if (!all(dv.test[,1:4] == matrix(c(1,2,1,2, 3,Inf,1,2, 2,3,2,3), byrow=T, ncol=4))) {
-  stop('NO')
+  stop('deactivate.vertices did not perform as expected when deactivate.edges=TRUE')
 }
 
 
@@ -2094,10 +2104,10 @@ net <-network.initialize(3)
 net[1,2]<-1;
 net[2,3]<-1;
 activate.vertices(net, onset=1, terminus=Inf)
-deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
+deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=TRUE)
 dv.test = as.data.frame(net)
-if (!all(dv.test[,1:4] == matrix(c(-Inf,2,1,2, 3,Inf,1,2, -Inf,2,2,3, 3, Inf, 2, 3), byrow=T, ncol=4))) {
-  stop('NO')
+if (!all(dv.test[,1:4] == matrix(c(-Inf,2,1,2, 3,Inf,1,2, -Inf,2,2,3, 3, Inf, 2, 3), byrow=TRUE, ncol=4))) {
+  stop('deactivate.vertices did not perform as expected when deactivate.edges=TRUE')
 }
 
 # deactivate associated edges when deactivating a vertex
@@ -2108,10 +2118,10 @@ net[2,3]<-1;
 activate.vertices(net, v=2, onset=1, terminus=Inf)
 deactivate.edges(net, e=1, onset=-Inf, terminus=Inf)
 deactivate.edges(net, e=2, onset=-Inf, terminus=Inf)
-deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
+deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=TRUE)
 dv.test = as.data.frame(net)
-if (!all(dv.test[,1:4] == matrix(c(Inf,Inf,1,2, Inf,Inf,2,3), byrow=T, ncol=4))) {
-  stop('NO')
+if (nrow(dv.test[,1:4]) != 0) {
+  stop('deactivate.vertices did not perform as expected when deactivate.edges=TRUE')
 }
 
 # deactivate associated edges when deactivating a vertex
@@ -2123,9 +2133,10 @@ deactivate.vertices(net, onset=-Inf, terminus=Inf)
 deactivate.vertices(net, onset=2, terminus=3, v=2, deactivate.edges=T)
 dv.test = as.data.frame(net)
 if (!all(dv.test[,1:4] == matrix(c(-Inf,2,1,2, 3,Inf,1,2, -Inf,2,2,3, 3, Inf, 2, 3), byrow=T, ncol=4))) {
-  stop('NO')
+  stop('deactivate.verteices did not perform as expected when deactivate.edges=TRUE')
 }
 
+expect_equal(network.size.active(deactivate.vertices(network.initialize(0)),onset=-Inf,terminus=Inf),0)
 
 cat("ok\n")
 
@@ -2186,6 +2197,10 @@ if(any(!g.results)){
   stop(paste("remove.activity is incorrectly removing activity matrices in tests",
              bad.tests))
 }
+
+expect_equal(network.size.active(delete.vertex.activity(network.initialize(0)),onset=-Inf,terminus=Inf),0)
+
+expect_equal(network.edgecount.active(delete.edge.activity(network.initialize(0)),onset=-Inf,terminus=Inf),0)
 
 cat("ok\n")
 

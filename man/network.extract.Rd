@@ -18,7 +18,8 @@
 }
 \usage{
 network.extract(x, onset = NULL, terminus = NULL, length = NULL, at = NULL,
-    rule = c("any", "all"), active.default = TRUE,retain.all.vertices = FALSE)
+    rule = c("any", "all"), active.default = TRUE, retain.all.vertices = FALSE,
+    trim.spells=FALSE)
 
 x \%t\% at
 }
@@ -32,35 +33,40 @@ x \%t\% at
   \item{rule}{ a text string for defining \dQuote{active} for this call:  \code{any} if elements active at any time during the interval are to be used, or \code{all} if elements must be active over the entire interval. }
   \item{active.default}{ logical; should elements without an activity attribute be regarded as active by default? }
   \item{retain.all.vertices}{ logical; should the extracted network retain all vertices, ignoring the vertex activity spells of x in order to ensure that the network returned has the same size as x?}
+  \item{trim.spells}{ logical; should the spells of vertices, edges and their attributes in the extracted network be trimmed to match the query range? (Sensible thing to do, but could be expensive)}
 }
 \details{
-  For the purposes of extraction, edges are only considered active over
-  some interval if: the edge itself is active over this
-  time period, and both of the incident vertices are also active over the given time period.
+  For the purposes of extraction, edges are only considered active over some interval if: the edge itself is active over this time period, and both of the incident vertices are also active over the given time period.
   
-  When \code{retain.all.vertices} is false (the default), the function has the following behavior:
+  When \code{retain.all.vertices=FALSE} (the default), the function has the following behavior:
  \itemize{
 	 \item If \code{at} is used to specify the spell of interest, the returned network consists of all edges and vertices
-  active at that timepoint.  
+  active at that time point.  
 	\item If an interval is supplied to specify the spell (via \code{onset} and one of \code{terminus} or \code{length}), edges and vertices active
-  over the specified interval are used.   If \code{rule=="any"}, then edges and vertices active at any time during the interval are returned; otherwise, only those active during the entire period are returned. 
+  over the specified interval are used.   If \code{rule="any"}, then edges and vertices active at any time during the interval are returned; otherwise, only those active during the entire period are returned. 
  }
-
-  Note that only active vertices are included by default.  As a result, the size of
-  the extracted network may be smaller than the original, and vertex and
-  edge ids will be translated, but may not correspond to their original values.  To
-  preserve network size, use \code{retain.all.vertices == TRUE}.  Under this rule, all vertices are preserved,
-  and edges that are active (by the specified \code{rule}) during the specified spell are included in the returned network.
-  
+Vertices in the extracted network will have the same order as the original network, with inactive vertices removed. 
+ 
+When \code{retain.all.vertices=TRUE}
+\itemize{
+   \item{All vertices are preserved in the output net to preserved network size and ids.}
+   \item{if \code{trim.spells=TRUE}, 'retained' vertices will be marked as inactive (they will have 'null' spell (Inf,Inf)) }
+   \item{Edges that are active (by the specified \code{rule}) during the specified spell are included in the returned network (same as above.)}
+   \item{Edges with one or more inactive vertices still will be removed (even if the vertex is being 'retained' to preserve network size)}
+   
+  }
   \code{\%t\%} (the temporal cross-section operator) is  a
   simplified (and less flexible) wrapper for \code{network.extract} that
   returns the network of active vertices and edges at a given time point.
 }
 \value{
-  A \code{network} object containing the active edges and vertices for
-  the specified spell, when \code{retain.all.vertices==FALSE},
-  otherwise the network object containing all vertices, and only those edges
+  A \code{networkDynamic} object containing the active edges and vertices for the specified spell, when \code{retain.all.vertices=FALSE}, otherwise the network object containing all vertices, and only those edges
   active for the specified spell.
+}
+
+\note{
+ Note that only active vertices are included by default (\code{retain.all.vertices=FALSE}).  As a result, the size of
+  the extracted network may be smaller than the original. Vertex and edge ids will be translated, but may not correspond to their original values.
 }
 %\references{ ~put references to the literature/web site here ~ }
 \author{ Carter T. Butts \email{buttsc@uci.edu}}
@@ -68,7 +74,7 @@ x \%t\% at
 %
 % ~Make other sections like Warning with \section{Warning }{....} ~
 %}
-\seealso{ \code{\link{is.active}}, \code{\link{activity.attribute}}, \code{\link{network.extensions}} }
+\seealso{ \code{\link{is.active}}, \code{\link{activity.attribute}}, \code{\link{network.extensions}}, and \code{\link[network:get.inducedSubgraph]{get.inducedSubgraph}} for a related non-temporal version}
 \examples{
 
 triangle <- network.initialize(3)    # create a toy network

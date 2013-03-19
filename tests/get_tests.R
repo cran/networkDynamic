@@ -3,10 +3,11 @@
 #      get.edgeIDs.active
 #      get.edges.active
 #      get.neighborhood.active     
+#      get.change.times
 #########################################################################
 
 require(networkDynamic)
-
+require(testthat)
 
 #---------------- GET.CHANGE.TIMES TESTS ------------------------
 # Notes:
@@ -54,7 +55,7 @@ t11 = get.change.times(net1, ignore.inf=F)
 t12 = get.change.times(net2, ignore.inf=F)
 a9 = (length(t9) == 0)
 a10 = all(t10 == seq(2,32,2))
-a11 = is.infinite(t11)
+a11 = length(t11)==0
 a12 = all(t12 == c(-Inf,seq(2,32,2),Inf))
 a.tests = paste("a", seq(1,12), sep="")
 a.results= sapply(a.tests, function(x){eval(parse(text=x))})
@@ -64,6 +65,59 @@ if(any(!a.results)){
              bad.tests))
 }
 
+
+# test when called on a nD with no edge times
+
+# test vertex attributes stuff
+net<-network.initialize(5)
+activate.vertex.attribute(net,"test","one",onset=0,terminus=2)
+activate.vertex.attribute(net,"test","two",onset=3,terminus=4)
+activate.vertex.attribute(net,"test","three",onset=5,terminus=6)
+
+expect_equal(get.change.times(net),c(0,2,3,4,5,6))
+expect_equal(get.change.times(net,vertex.attribute.activity=FALSE),numeric(0))
+
+# test if only some vertices have attribute
+net<-network.initialize(5)
+activate.vertex.attribute(net,"test","one",onset=0,terminus=2,v=1:2)
+expect_equal(get.change.times(net),c(0,2),info="checking if only some vertices have activity attribute")
+
+# test edge attribute stuff
+net<-network.initialize(5)
+net[1,2]<-1
+activate.edge.attribute(net,"test","one",onset=0,terminus=2)
+activate.edge.attribute(net,"test","two",onset=3,terminus=4)
+activate.edge.attribute(net,"test","three",onset=5,terminus=6)
+
+expect_equal(get.change.times(net),c(0,2,3,4,5,6),info='check edge attribute activity activity')
+expect_equal(get.change.times(net,edge.attribute.activity=FALSE),numeric(0),info='ignore check edge attribute activity')
+
+# test if only some edges have attributes
+net<-network.initialize(5)
+net[1,2]<-1
+net[2,3]<-1
+activate.edge.attribute(net,"test","one",onset=0,terminus=2,e=2)
+expect_equal(get.change.times(net),c(0,2),info='check if only some edges have activity attribute')
+
+# test with deleted edge
+delete.edges(net,eid=1)
+expect_equal(get.change.times(net),c(0,2),info='check if some edges deleted')
+
+# test network attribute stuff
+net<-network.initialize(5)
+activate.network.attribute(net,"test","one",onset=0,terminus=2)
+activate.network.attribute(net,"test","two",onset=3,terminus=4)
+activate.network.attribute(net,"test","three",onset=5,terminus=6)
+
+expect_equal(get.change.times(net),c(0,2,3,4,5,6),info='check network attribute activity activity')
+expect_equal(get.change.times(net,network.attribute.activity=FALSE),numeric(0),info='ignore check network attribute activity')
+
+# check if null spell
+net<-network.initialize(2)
+deactivate.vertices(net,onset=-Inf,terminus=Inf)
+expect_equal(get.change.times(net,ignore.inf=FALSE),numeric(0),info="check for null spell")
+
+expect_equal(get.change.times(network.initialize(0)),numeric(0))
 
 cat("ok\n")
 
@@ -140,6 +194,7 @@ if(any(!b.results)){
              bad.tests))
 }
 
+
 # some other tests that Zack has written                   
 # Test case check that given onset all get.edges.active reproduces get.edges.active
 a1 <-activate.edges(anet,onset=0,terminus=3)
@@ -166,7 +221,6 @@ if(any(!c.results)){
   stop(paste("get.edgeIDs.active is returning incorrect edge IDs in tests",
              bad.tests))
 }
-
 
 
 
@@ -202,6 +256,8 @@ if(any(!b.results)){
   stop(paste("get.edges.active is returning incorrect edges in tests",
              bad.tests))
 }
+
+get.edges.active(network.initialize(0),v=1,at=1)
 
 cat("ok\n")
 
@@ -328,5 +384,7 @@ if(any(!c.results)){
   stop(paste("get.neighborhood.active is returning wrong neighborhood in tests",
              bad.tests))
 }
+
+expect_equal(get.neighborhood.active(network.initialize(0),v=1),integer(0))
 
 cat("ok\n")

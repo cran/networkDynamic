@@ -11,20 +11,22 @@
 \alias{as.data.frame.networkDynamic}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Convert a networkDynamic object into alternate representations.
+Extracts the edge timing information from a networkDynamic object and represent as a data.frame.
 }
 \description{
-Converts a networkDynamic object into a data frame giving lists of edges and their activity spells.
+Creates a data.frame giving lists of edges and their activity spells corresponding to the networkDynamic object.
 }
 \usage{
 \method{as.data.frame}{networkDynamic}(x, row.names = NULL, optional = FALSE,
-                                       start = NULL, end = NULL, ...)
+                                       e =seq_along(x$mel),
+                                       start = NULL, end = NULL, active.default=TRUE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{a networkDynamic object}
   \item{row.names}{ignored}
   \item{optional}{ignored}
+  \item{e}{vector of edge ids that should be included in the output.}
   \item{start}{Left-censoring time: time at which the network was first
     observed. Edge spells with onset \code{-Inf} are given this
     as their start time (and marked as left censored). See Details for
@@ -33,6 +35,9 @@ Converts a networkDynamic object into a data frame giving lists of edges and the
     observed. Edge spells with terminus \code{Inf} are given this
     as their end time (and marked as right censored). See Details for
     the default values.}
+  \item{active.default}{logical indicating if edges with no defined a
+  ctivity spells should be considered active by default 
+  (and appear as a row in output)}
   \item{\dots}{possible additional arguments}
 }
 \details{
@@ -49,13 +54,20 @@ describing the networkDynamic object, having the following columns:
 \item{tail, head}{Tail and head of the edge.}
 \item{onset.censored, terminus.censored}{TRUE if onset/terminus time is censored.}
 \item{duration}{the duration (terminus-onset) of each spell, evaluated after censoring}
+\item{edge.id}{the id of the edge the row corresponds to}
+The output \code{data.frame} will be sorted by edge.id, onset,terminus. This means that for most (non-multiplex) networks the group of spells for a specific edge will appear in sequential lines of output, but the overall output is not in a temporal order. 
 }
 
+\note{
+Vertex and attribute activity is not included in the returned value. If an edge has multiple activity spells, it will have multiple rows in the output. 
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 \seealso{
 See Also as \code{\link{get.edge.activity}},\code{\link{get.vertex.activity}}
 }
+
+
 
 \examples{
 net <-network.initialize(3)
@@ -65,6 +77,7 @@ net[2,3]<-1;
 activate.edges(net,onset=1,terminus=Inf,e=1)
 activate.edges(net,onset=2,terminus=3,e=2)
 activate.vertices(net, onset=1, terminus=Inf, v=1)
+as.data.frame(net)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

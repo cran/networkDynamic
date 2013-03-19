@@ -5,6 +5,7 @@
 #########################################################################
 
 require(networkDynamic)
+require(testthat)
 
 
 #-------------------- IS.ACTIVE TESTS ---------------------------------
@@ -304,6 +305,7 @@ if(any(g.results)){
              bad.tests))
 }
 
+expect_equal(is.active(network.initialize(0),at=1),logical(0))
 
 cat("ok\n")
 
@@ -406,6 +408,8 @@ if(any(!c.results)){
   stop(paste("activate.edges is incorrectly activating edges in tests",
              bad.tests))
 }
+
+expect_false(is.adjacent.active(network.initialize(0),1))
 
 cat("ok\n")
 

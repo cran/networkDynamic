@@ -1,10 +1,11 @@
 Package: networkDynamic
-Version: 0.3.1
-Date: 2012-10-15
+Version: 0.4
+Date: 2013-03-19
 Title: Dynamic Extensions for Network Objects
 Type: Package
-Depends: network
+Depends: network (>= 1.7.2), statnet.common
 Enhances: network
+Suggests: testthat
 Authors@R: c( person("Carter T.", "Butts", role=c("aut"),
         email="buttsc@uci.edu"), person("Ayn", "Leslie-Cook",
         role=c("aut"), email="aynlc3@uw.edu"), person("Pavel N.",
@@ -26,11 +27,12 @@ Description: Simple interface routines to facilitate the handling of
 License: GPL-3
 LazyLoad: yes
 URL: http://statnet.org
-Packaged: 2012-10-17 19:32:51 UTC; skyebend
+Packaged: 2013-04-08 23:06:48 UTC; skyebend
 Author: Carter T. Butts [aut], Ayn Leslie-Cook [aut], Pavel N.
         Krivitsky [aut], Skye Bender-deMoll [aut, cre], Zack Almquist
         [ctb], David R. Hunter [ctb], Li Wang [ctb], Kirk Li [ctb],
         Steven M. Goodreau [ctb], Martina Morris [ctb]
 Maintainer: Skye Bender-deMoll <skyebend@uw.edu>
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2012-10-19 06:46:03
+Date/Publication: 2013-04-09 17:39:43
