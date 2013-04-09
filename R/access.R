@@ -71,7 +71,7 @@ activate.edges <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
   if(!is.vector(e) || !is.numeric(e))
     stop("Edge ID's, e, must be a numeric vector in activate.edges.\n")
   if(length(x$mel)>0) {
-    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+    if((min(e,Inf) < 1) || (max(e,-Inf) > x%n%"mnext"-1)) 
       stop("Illegal edge in activate.edges.\n")
  
     # preliminaries
@@ -152,7 +152,7 @@ activate.vertices <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
   }
   if(!is.vector(v) || !is.numeric(v))
     stop("Vertex ID's, v, must be a numeric vector in activate.vertices.\n")
-  if((min(v) < 1) || (max(v) > network.size(x))) 
+  if((min(v,Inf) < 1) || (max(v,-Inf) > network.size(x))) 
     stop("Illegal vertex in activate.vertices.\n")
 
   # preliminaries
@@ -234,7 +234,7 @@ deactivate.edges<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
   if(!is.vector(e) || !is.numeric(e))
     stop("Edge ID's, e, must be a numeric vector in deactivate.edges.\n")
   if(length(x$mel) > 0) {
-    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+    if((min(e,Inf) < 1) || (max(e,-Inf) > x%n%"mnext"-1)) 
       stop("Illegal edge in deactivate.edges.\n")
 
     # preliminaries
@@ -320,9 +320,10 @@ deactivate.vertices<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
   }
   if(!is.vector(v) || !is.numeric(v))
     stop("Vertices, v, must be a numeric vector in deactivate.vertices.\n")
-  if((min(v) < 1) || (max(v) > network.size(x))) 
+  
+  if((min(v,Inf) < 1) || (max(v,-Inf) > network.size(x))) 
     stop("Illegal vertex in deactivate.vertices.\n")
-
+  
   # preliminaries
   v <- v[!sapply(x$val[v], is.null)]  #Filter out non-vertices
   if(length(v) > 0) {
@@ -427,23 +428,56 @@ add.vertices.active <- function(x, nv, onset=NULL, terminus=NULL, length=NULL, a
   invisible(x)  
 }
 
-
+# ------------- get.change.times ---------
 # pulls out all of the times at which acitvity changes
-get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore.inf=TRUE) {
+# TODO: may be problems with the 'null' (Inf,Inf) spell
+get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore.inf=TRUE,vertex.attribute.activity=TRUE,edge.attribute.activity=TRUE,network.attribute.activity=TRUE) {
   if(!is.network(x))
     stop("get.change.times requires an argument of class network.\n")
   if(!is.logical(vertex.activity) | !is.logical(edge.activity))
     stop("get.change.times requires that vertex.activity and edge.activity be logicals.\n")
-  times = numeric(0)
-  if(edge.activity)
-    times = c(times, get.edge.attribute(x$mel, "active"))
-  if(vertex.activity)
-    times = c(times, get.vertex.attribute(x, "active"))
-  if(ignore.inf)  
-  times = sort(unique(times[!is.infinite(times)]))
-  else
-  times = sort(unique(times))
-  times
+  times <- numeric(0)
+  if(edge.activity & network.edgecount(x)>0){
+    spls<-get.edge.attribute(x$mel, "active",unlist=FALSE)
+    spls<-.removeNullSpells(spls)
+    times <- c(times,unlist(spls) )
+  }
+  if(vertex.activity & network.size(x)>0){
+    if("active"%in%list.vertex.attributes(x)){
+      spls<-get.vertex.attribute(x, "active",unlist=FALSE)
+      spls<-.removeNullSpells(spls)
+      times <- c(times, unlist(spls))
+    }
+  }
+  if(vertex.attribute.activity & network.size(x)>0){
+    attrs<-list.vertex.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
+    for(attr in attrs){
+      vals <- get.vertex.attribute.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)
+      vals <- vals[!is.na(vals)]
+      times<-c(times, unique(unlist(sapply(vals,'[[',2,simplify=FALSE))))
+    }
+  }
+  if(edge.attribute.activity & network.edgecount(x)>0){
+    attrs<-list.edge.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
+    for(attr in attrs){
+      vals<-get.edge.value.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)
+      vals<-vals[!is.na(vals)]       
+      times<-c(times, unique(unlist(sapply(vals,'[[',2,simplify=FALSE))))
+    }
+  }
+  if(network.attribute.activity){
+    attrs<-list.network.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
+    for(attr in attrs){
+      times<-c(times, unique(as.vector(get.network.attribute.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)[[2]])))
+    }
+  }
+  
+  if(ignore.inf){
+    times <- sort(unique(times[!is.infinite(times)]))
+  } else {
+    times <- sort(unique(times))
+  }
+  return(times)
 }
 
 
@@ -451,6 +485,10 @@ get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore
 get.edgeIDs.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
                              alter=NULL,neighborhood=c("out", "in", "combined"),
                              rule=c("any","all"),na.omit=TRUE,active.default=TRUE){
+  
+  if(missing(v)){
+    stop("'v' parameter must be specified with a vertex id to indicate which vertex to search for incident edges")
+  }
   # get IDs and filter by activity
   eid<-get.edgeIDs(x=x,v=v,alter=alter,neighborhood=neighborhood, na.omit=na.omit)
   if(length(eid)==0)
@@ -468,6 +506,9 @@ get.edgeIDs.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
 get.edges.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
                            alter=NULL,neighborhood=c("out", "in", "combined"),
                            rule=c("any","all"),na.omit=TRUE,active.default=TRUE){
+  if(missing(v)){
+    stop("'v' parameter must be specified with vertex id to indicate which vertex to search for incident edges")
+  }
   # get IDs and filter by activity
   eid<-get.edgeIDs(x=x,v=v,alter=alter,neighborhood=neighborhood, na.omit=na.omit)
   if(length(eid)==0)
@@ -532,19 +573,7 @@ get.neighborhood.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=N
 }
 
 # wrapper functions to return activity matrices of edges and vertices
-get.edge.activity <- function(x, e=1:length(x$mel)) {
-  if(length(x$mel)>0) 
-    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
-      stop("Illegal edge in get.edge.activity.\n")
-  get.edge.attribute(x$mel[e], "active", unlist=FALSE)
-}
-
-get.vertex.activity <- function(x, v=1:network.size(x)) {
-  if((min(v) < 1) || (max(v) > network.size(x))) 
-    stop("Illegal vertex in get.vertex.activity.\n")  
-  vam=get.vertex.attribute(x, "active", unlist=FALSE)
-  vam[v]
-}
+# THESE WERE NOT BEING USED, see version in utilities.R
 
 
 #Function to assess activity of edges (e) or vertices (v) at a given point
@@ -585,9 +614,9 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
         stop("Query intervals must be specified by exactly 1 of {at, onset+terminus, onset+length, length+terminus}")
     }
   }
-  if(length(e)*length(v)>0 || length(e)+length(v)==0)
+  if(length(e)*length(v)>0)
     stop("Either edges or vertices must be specified (not both) in is.active.\n")
-  if(!is.null(v)){
+  if(!is.null(v) & length(v)>0){
     if(!is.vector(v) || !is.numeric(v))
       stop("Vertex ID's, v, must be a numeric vector in is.active.\n")
     if((min(v) < 1) || (max(v) > network.size(x))) 
@@ -596,7 +625,7 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
   if(!is.null(e)){
     if(!is.vector(e) || !is.numeric(e))
       stop("Edge ID's, e, must be a numeric vector in is.active.\n")
-    if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+    if((min(e,Inf) < 1) || (max(e,-Inf) > x%n%"mnext"-1)) 
       stop("Illegal edge in is.active.\n")
   }
 
@@ -789,7 +818,7 @@ delete.edge.activity <- function(x, e=seq_along(x$mel)) {
     stop("The remove.activity function requires that x be a network object.\n")
   if(!is.vector(e) || !is.numeric(e))
     stop("Edge ID's, e, must be a numeric vector in remove.activity.\n")
-  if((min(e) < 1) || (max(e) > x%n%"mnext"-1)) 
+  if((min(e,Inf) < 1) || (max(e,-Inf) > x%n%"mnext"-1)) 
     stop("Illegal edge in remove.activity argument e.\n")
 
   # if deleting all edges, can use network's delete.edge.attribute
@@ -830,7 +859,7 @@ delete.vertex.activity <- function(x, v=seq_len(network.size(x))) {
     stop("The remove.activity function requires that x be a network object.\n")
   if(!is.vector(v) || !is.numeric(v))
     stop("Vertex ID's, v, must be a numeric vector in remove.activity.\n")
-  if((min(v) < 1) || (max(v) > network.size(x))) 
+  if((min(v,Inf) < 1) || (max(v,-Inf) > network.size(x))) 
     stop("Illegal vertex in remove.activity argument v.\n")
     
   # if deleting all vertices, can use network's delete.vertex.attribute
@@ -999,4 +1028,13 @@ delete.spell<-function(spells, onset=-Inf, terminus=Inf){
           spells[(lrow:ns),,drop=FALSE])
   else
     spells[-((erow+1):(lrow-1)),,drop=FALSE]
+}
+
+# function to delete 'null' (Inf,Inf) spells from a lsit of spells
+# and replace them with null
+.removeNullSpells <- function(x){
+  return(lapply(x,function(x){
+    if(!is.null(x) && !is.na(x) && x[1,1]==Inf && x[1,2]==Inf){ return(NULL)} else { return(x) }
+  }))
+         
 }

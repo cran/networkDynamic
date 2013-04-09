@@ -1,4 +1,16 @@
 Change Log:
+v0.4 - new functionality and bug fixes
+  - networkDynamic() function supports conversion from various tabular schemas (spell-edgelists, toggles, lists of networks)
+  - added ability to attach Temporally Extended Attributes (TEAs) to network elements to store and manipulate changing attributes of vertices, edges and networks.
+  - specification of an (optional) net.obs.period attribute to store meta-information about the network's period of observation/simulation
+  - added network.collapse() function (and %k% operator) which complements network.extract() for extracting an appropriate static network from a dynamicNetwork object
+  - added support for networks with zero vertices (feature added in network)
+  - addition of as.network.networkDynamic and as.networkDynamic.network to remove and set networkDynamic class on network objects. 
+  - added package dependency on statnet.commons for startup message functionality
+  - added package suggests to testthat to support more efficient writing of unit tests. 
+  - extensive and updated package vignette / tutorial: browseVignettes(package='networkDynamic')
+  - numerous bug fixes and documentation improvements
+
 v0.3 - bug fixes and new functionality
 	- network.dynamic.check now optionally reports what is wrong with an element
 	- new functions get.vertex.activity and get.edge.activity to return activity matrices of elements
@@ -11,19 +23,19 @@ v0.3 - bug fixes and new functionality
 	- dactivate.vertices function now includes option to deactivate incident edges
 
 v0.1-0 - Lots of rebuilding
-    - added namespaces
-    - moved duration.matrix script from ergm code, added some C code
-    - update to package loading
-    - renamed network.crossection to network.extract
-    - ndConverter functions for translating various forms of relational information into networkDynamic format
-    - addition of 'at' and 'length' arguments for most temporal methods
-    - rebuilt code with increased argument checking for most spell related methods
-    - added test cases for most methods
-    - some changes in spec for spell handling
-    - bug fixes in spell handling for interval queries
-    - bug fix to network.dynamic.check
-    - added dynamic network datasets of Newcomb's fraternities, Lin Freeman's Windsurfers and McFarland's classroom networks
-    - filename of build now includes version information
+ - added namespaces
+ - moved duration.matrix script from ergm code, added some C code
+ - update to package loading
+ - renamed network.crossection to network.extract
+ - ndConverter functions for translating various forms of relational information into networkDynamic format
+ - addition of 'at' and 'length' arguments for most temporal methods
+ - rebuilt code with increased argument checking for most spell related methods
+ - added test cases for most methods
+ - some changes in spec for spell handling
+ - bug fixes in spell handling for interval queries
+ - bug fix to network.dynamic.check
+ - added dynamic network datasets of Newcomb's fraternities, Lin Freeman's Windsurfers and McFarland's classroom networks
+ - filename of build now includes version information
 
 v0.1-1 - Internal Bugfix Release, w/Minor New Function
   New Functions:

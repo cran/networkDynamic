@@ -1,0 +1,44 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {section}{\numberline {2}How to start and end relationships easily}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Activating edges}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Peeking back in time}{4}{subsection.2.2}
+\contentsline {section}{\numberline {3}Birth, Death, Reincarnation and other ways for vertices to enter and leave networks}{6}{section.3}
+\contentsline {subsection}{\numberline {3.1}Activating vertices}{6}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Deactivating elements}{7}{subsection.3.2}
+\contentsline {section}{\numberline {4}``Spells'': the magic under the hood}{8}{section.4}
+\contentsline {subsection}{\numberline {4.1}How we save time}{8}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Multiple spells != multiplex}{10}{subsection.4.2}
+\contentsline {section}{\numberline {5}Differences between Discrete and Continuous data}{10}{section.5}
+\contentsline {subsection}{\numberline {5.1}You might be discrete if...}{10}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}You might be continuous if...}{11}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Comparing models}{11}{subsection.5.3}
+\contentsline {section}{\numberline {6}Show me how it was: extracting static views of dynamic networks }{13}{section.6}
+\contentsline {subsection}{\numberline {6.1}Testing for activity}{13}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Listing active elements}{13}{subsection.6.2}
+\contentsline {subsection}{\numberline {6.3}Are regular network objects active?}{14}{subsection.6.3}
+\contentsline {subsection}{\numberline {6.4}Basic descriptives}{15}{subsection.6.4}
+\contentsline {subsection}{\numberline {6.5}Collapsing a network vs. extracting it}{15}{subsection.6.5}
+\contentsline {subsection}{\numberline {6.6}Wiping the slate: removing activity information}{17}{subsection.6.6}
+\contentsline {subsection}{\numberline {6.7}Differences between ``any'' and ``all' aggregation rules}{18}{subsection.6.7}
+\contentsline {section}{\numberline {7}Squooshing data into networkDynamic objects}{18}{section.7}
+\contentsline {subsection}{\numberline {7.1}But my data are panels of network matrices...}{19}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}Converting from toggles. }{22}{subsection.7.2}
+\contentsline {subsection}{\numberline {7.3}Batteries and tergm example not included}{24}{subsection.7.3}
+\contentsline {subsection}{\numberline {7.4}Converting a stream of spells: McFarland's classroom interactions}{24}{subsection.7.4}
+\contentsline {section}{\numberline {8}Transforming networkDynamic objects to other representations}{28}{section.8}
+\contentsline {subsection}{\numberline {8.1}Converting to lists of spells}{28}{subsection.8.1}
+\contentsline {subsection}{\numberline {8.2}Converting to a list of networks or matrices}{29}{subsection.8.2}
+\contentsline {section}{\numberline {9}Dynamic attributes}{31}{section.9}
+\contentsline {subsection}{\numberline {9.1}Activating TEA attributes}{31}{subsection.9.1}
+\contentsline {subsection}{\numberline {9.2}Querying TEA attributes}{32}{subsection.9.2}
+\contentsline {subsection}{\numberline {9.3}Modifying TEAs}{35}{subsection.9.3}
+\contentsline {section}{\numberline {10}Making Lin Freeman's windsurfers gossip}{35}{section.10}
+\contentsline {subsection}{\numberline {10.1}A toy diffusion model}{37}{subsection.10.1}
+\contentsline {subsection}{\numberline {10.2}Go!}{38}{subsection.10.2}
+\contentsline {subsection}{\numberline {10.3}OK, what happened?}{38}{subsection.10.3}
+\contentsline {subsection}{\numberline {10.4}Picturing the rumor tree}{40}{subsection.10.4}
+\contentsline {section}{\numberline {11}Related packages and other coming attractions}{42}{section.11}
+\contentsline {section}{\numberline {12}Missing bits for this document}{42}{section.12}
+\contentsline {section}{\numberline {13}Citing networkDynamic}{43}{section.13}
+\contentsline {section}{\numberline {14}Vocabulary definitions}{43}{section.14}
+\contentsline {section}{\numberline {15}Complete package function listing}{44}{section.15}

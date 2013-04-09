@@ -7,6 +7,7 @@
 #########################################################################
 
 require(networkDynamic)
+require(testthat) # helper package for unit tests
 
 
 #------------------------ NETWORK.EXTRACT ----------------------------
@@ -33,7 +34,7 @@ deactivate.edges(anet1)
 deactivate.vertices(anet1)
 bnet1=network.extract(anet1, at=10)
 bnet1.t=anet1%t%10
-b1 = identical(bnet1, list())
+b1 = all.equal(bnet1, as.networkDynamic(network.initialize(0,directed=FALSE)))
 b2 = identical(bnet1, bnet1.t)
 # a network with no active edges, but active vertices, retain.all=F
 anet2 <- anet.copy
@@ -55,7 +56,7 @@ anet4 <- anet.copy
 activate.vertices(anet4, 10, Inf)
 activate.edges(anet4, -Inf, 20)
 bnet4=network.extract(anet4, -10, 0)
-b7 = identical(bnet4, list())
+b7 = all.equal(bnet4, as.networkDynamic(network.initialize(0,directed=FALSE)))
 # networks with active edges and vertices
 #  a non-bipartite simple network, retain.all=F
 anet5 <- anet.copy
@@ -158,6 +159,85 @@ if(any(!b.results)){
   stop(paste("network.extract is incorrectly extracting networks in tests",
              bad.tests))
 }
+
+nd<-network.initialize(7)
+add.edges.active(nd,onset=0,terminus=5,tail=1,head=2)
+add.edges.active(nd,onset=4,terminus=6,tail=2,head=3)
+add.edges.active(nd,onset=0,terminus=5,tail=3,head=4)
+add.edges.active(nd,onset=4,terminus=8,tail=4,head=5)
+activate.edge.attribute(nd,"letters","a",onset=0,terminus=5)
+activate.vertex.attribute(nd,"numbers","one",onset=0,terminus=5)
+activate.network.attribute(nd,"squashes","pumpkin",onset=0,terminus=5)
+nd1<-network.extract(nd,onset=1,terminus=3,trim.spells=TRUE)
+if(!all(get.change.times(nd1) == c(1,3))){
+  stop("network.extract did not trim edge activity spells to query range as expected")
+}
+if(!all(get.edge.value.active(nd1,"letters",onset=-Inf,terminus=Inf,return.tea=TRUE)[[1]][[2]]==c(1,3))){
+  stop("network.extract did not trim edge attribute activity spells to query range as expected")
+}
+if(!all(get.vertex.attribute.active(nd1,"numbers",onset=-Inf,terminus=Inf,return.tea=TRUE)[[1]][[2]]==c(1,3))){
+  stop("network.extract did not trim vertex attribute activity spells to query range as expected")
+}
+if(!all(get.network.attribute.active(nd1,"squashes",onset=-Inf,terminus=Inf,return.tea=TRUE)[[2]]==c(1,3))){
+  stop("network.extract did not trim network attribute activity spells to query range as expected")
+}
+
+# test trim with "at" version
+nd3<-network.extract(nd,at=3,trim.spells=TRUE)
+if (!all(nd3$mel[[1]]$atl$letters.active[[2]] == c(3,3), nd3$mel[[1]]$atl$letters.active[[1]]=='a')){
+  stop("network.extract did not trim edge attribute spells to 'at' query range as expected")
+}
+
+if (!all(nd3$val[[1]]$numbers.active[[2]] == c(3,3),nd3$val[[1]]$numbers.active[[1]]=='one')){
+  stop("network.extract did not trim vertex attribute spells to 'at' query range as expected")
+}
+
+if (!all(nd3$gal$squashes.active[[2]] == c(3,3),nd3$gal$squashes.active[[1]]=='pumpkin')){
+  stop("network.extract did not trim network attribute spells to 'at' query range as expected")
+}
+
+if (!all(nd3$mel[[1]]$atl$active==c(3,3))){
+  stop("network.extract did not trim edge activity spells to 'at' query range as expecrted")
+}
+
+if (!all(nd3$val[[1]]$active==c(3,3))){
+  stop("network.extract did not trim vertex activity spells to 'at' query range as expecrted")
+}
+
+# check that vertices included by retain.all=TRUE are marked inactive
+net<-network.initialize(3)
+activate.vertices(net,onset=0,terminus=2,v=2:3)
+net1<-network.extract(net,at=1,active.default=FALSE,retain.all.vertices=TRUE,trim.spells=TRUE)
+expect_true(is.null(get.vertex.activity(net1)[[1]]),info="check that vertices included by retain.all=TRUE are marked inactive by trim.spells")
+expect_equal(unlist(get.vertex.activity(net1)),c(1,1,1,1),info="check that vertices included by retain.all=TRUE are marked inactive by trim.spells")
+
+# check if edges to inactive vertices are retained when retain.all
+net<-network.initialize(3)
+activate.vertices(net,onset=0,terminus=2,v=2:3)
+net[1,2]<-1
+expect_equal(network.edgecount(network.extract(net,at=1,retain.all.vertices=TRUE,active.default=FALSE)),0,info="check if edges to inactive vertices are retained when retain.all.vertices=TRUE")
+
+# check that net.obs.period updated
+
+
+# check extraction of network size 0
+nd<-activate.vertices(network.initialize(5),onset=1,terminus=Inf)
+net0<-network.extract(nd,at=0)
+expect_true(is.network(net0),info="check network object returned for net of zero vertices")
+expect_equal(network.size(net0),0,info="check network object returned for net of zero vertices has 0")
+
+# check ordering of elements after extraction
+nd<-network.initialize(5)
+network.vertex.names(nd)<-LETTERS[5:1]
+n1<-network.extract(nd,at=0)
+
+# does order match if no verts removed?
+expect_equal(network.vertex.names(n1),LETTERS[5:1])
+
+deactivate.vertices(nd,onset=-1,terminus=2,v=2:4)
+n2<-network.extract(nd,at=0)
+expect_equal(network.vertex.names(n2),c("E","A"))
+
 cat("ok\n")
 
 
@@ -244,6 +324,127 @@ if(any(!c.results)){
   stop(paste("network.dynamic.check is returning incorrect results in tests",
              bad.tests))
 }
+
+# a network with no edges
+nd <-network.initialize(3)
+if(!length(network.dynamic.check(nd,verbose=FALSE)$edge.checks)==0){
+  stop("edge check returned wrong value for empty network")
+}
+
+# an vertex attribute named active that is not a list
+nd <-network.initialize(3)
+set.vertex.attribute(nd,"letters.active","a")
+if(any(network.dynamic.check(nd,verbose=FALSE)$vertex.tea.checks)){
+  stop("network.dynamic.check failed to flag bad vertex TEA attributes")
+}
+
+# multiple spells
+nd <-network.initialize(3)
+activate.vertex.attribute(nd,"letters","a",onset=1,terminus=2)
+activate.vertex.attribute(nd,"letters","b",onset=2,terminus=3)
+if(!all(network.dynamic.check(nd,verbose=FALSE)$vertex.tea.checks)){
+  stop("network.dynamic.check failed on perfectly good vertex TEA attributes")
+}
+
+# missing attributes
+nd <-network.initialize(3)
+activate.vertex.attribute(nd,"letters","a",at=1)
+if(!all(network.dynamic.check(nd,verbose=FALSE)$vertex.tea.checks)){
+  stop("network.dynamic.check failed on perfectly good vertex TEA attributes")
+}
+
+# mangled spell matrix
+nd <-network.initialize(3)
+activate.vertex.attribute(nd,"letters","a",onset=1,terminus=2)
+activate.vertex.attribute(nd,"letters","b",onset=2,terminus=3)
+nd$val[[2]]$letters.active[[2]][1,1]<-5
+if(network.dynamic.check(nd,verbose=FALSE)$vertex.tea.checks[2]){
+  stop("network.dynamic.check failed to flag bad vertex TEA attributes")
+}
+
+# test for edges
+nd <-network.initialize(3)
+add.edges(nd,1,2)
+add.edges(nd,2,3)
+add.edges(nd,3,1)
+set.edge.attribute(nd,"letters.active","a")
+if(any(network.dynamic.check(nd,verbose=FALSE)$edge.tea.checks)){
+  stop("network.dynamic.check failed to flag bad edge TEA attributes")
+}
+
+# test multiple spells
+nd <-network.initialize(3)
+add.edges(nd,1,2)
+add.edges(nd,2,3)
+add.edges(nd,3,1)
+activate.edge.attribute(nd,"letters","a",onset=1,terminus=2)
+activate.edge.attribute(nd,"letters","b",onset=2,terminus=3)
+activate.edge.attribute(nd,"letters","b",onset=3,terminus=4)
+if(!all(network.dynamic.check(nd,verbose=FALSE)$edge.tea.checks)){
+  stop("network.dynamic.check incorrectly flaged good edge TEA attributes")
+}
+
+# mangled spell matrix
+nd$mel[[2]]$atl$letters.active[[2]][1,1]<-100
+if(network.dynamic.check(nd,verbose=FALSE)$edge.tea.checks[2]){
+  stop("network.dynamic.check failed to flag bad edge TEA attributes")
+}
+
+# check network attrs
+nd <-network.initialize(3)
+set.network.attribute(nd,"letters.active","a")
+if(network.dynamic.check(nd,verbose=FALSE)$network.tea.checks){
+  stop("network.dynamic.check failed to flag bad network TEA attributes")
+}
+
+# check multiple spls network attrs
+nd <-network.initialize(3)
+activate.network.attribute(nd,'letters',"a",onset=1,terminus=2)
+activate.network.attribute(nd,'letters',"b",onset=2,terminus=3)
+activate.network.attribute(nd,'letters',"c",onset=3,terminus=4)
+if(!network.dynamic.check(nd,verbose=FALSE)$network.tea.checks){
+  stop("network.dynamic.check incorrectly flaged good network TEA attributes")
+}
+
+# check malformed spls
+nd$gal$letters.active[[2]][1,1]<-Inf
+if(network.dynamic.check(nd,verbose=FALSE)$network.tea.checks){
+  stop("network.dynamic.check failed to flag bad network TEA attributes")
+}
+
+# check net.obs.period
+net<-network.initialize(3)
+add.edges.active(net,tail=1,head=2,onset=0,terminus=3)
+checks<-network.dynamic.check(net,verbose=FALSE)
+expect_true(is.null(checks$net.obs.period.check))
+
+# check for bad net obs period
+nop <- list(observations=list(c("a",2)), mode="discrete", time.increment=1,time.unit="step")
+set.network.attribute(net,'net.obs.period',nop)
+checks<-network.dynamic.check(net,verbose=FALSE)
+expect_false(checks$net.obs.period.check)
+
+# check for bad net obs period
+nop <- list(observations=list(c(1,2),c(1,2,3)), mode="discrete", time.increment=1,time.unit="step")
+set.network.attribute(net,'net.obs.period',nop)
+checks<-network.dynamic.check(net,verbose=FALSE)
+expect_false(checks$net.obs.period.check)
+
+# check for good net obs period
+nop <- list(observations=list(c(0,4)), mode="discrete", time.increment=1,time.unit="step")
+set.network.attribute(net,'net.obs.period',nop)
+checks<-network.dynamic.check(net,verbose=FALSE)
+expect_true(checks$net.obs.period.check)
+
+# check for net obs period conflicting with network time range
+nop <- list(observations=list(c(1,2)), mode="discrete", time.increment=1,time.unit="step")
+set.network.attribute(net,'net.obs.period',nop)
+checks<-network.dynamic.check(net,verbose=TRUE)
+expect_false(checks$net.obs.period.check)
+
+# check network size 0
+expect_equal(network.dynamic.check(network.initialize(0))$vertex.check,logical(0))
+
 cat("ok\n")
 
 
@@ -278,9 +479,12 @@ b.tests = paste("b", seq(1,5), sep="")
 b.results= sapply(b.tests, function(x){eval(parse(text=x))})
 if(any(!b.results)){
   bad.tests = paste("b", which(!b.results), sep="", collapse=" ")
-  warning(paste("network.edgecount.active is incorrectly counting edges in tests",
+  error(paste("network.edgecount.active is incorrectly counting edges in tests",
              bad.tests))
 }
+
+expect_equal(network.edgecount(network.initialize(0)),0)
+
 cat("ok\n")
 
 
@@ -324,9 +528,12 @@ b.tests = paste("b", seq(1,9), sep="")
 b.results= sapply(b.tests, function(x){eval(parse(text=x))})
 if(any(!b.results)){
   bad.tests = paste("b", which(!b.results), sep="", collapse=" ")
-  warning(paste("network.naedgecount.active is incorrectly counting edges in tests",
+  error(paste("network.naedgecount.active is incorrectly counting edges in tests",
              bad.tests))
 }
+
+expect_equal(network.naedgecount.active(network.initialize(0)),0)
+
 cat("ok\n")
 
 #-------------------- NETWORK.SIZE.ACTIVE --------------------------
@@ -347,9 +554,11 @@ b.tests = paste("b", seq(1,2), sep="")
 b.results= sapply(b.tests, function(x){eval(parse(text=x))})
 if(any(!b.results)){
   bad.tests = paste("b", which(!b.results), sep="", collapse=" ")
-  warning(paste("network.size.active is incorrectly counting nodes in tests",
+  error(paste("network.size.active is incorrectly counting nodes in tests",
              bad.tests))
 }
+
+expect_equal(network.size.active(network.initialize(0),at=0),0)
 
 cat("ok\n")
 
@@ -438,5 +647,189 @@ if(any(!b.results)){
              bad.tests))
 }
 
+expect_equal(network.dyadcount.active(network.initialize(0)),0)
+
 cat("ok\n")
 
+# ------ network.collapse ----
+cat("testing network.collapse ...")
+test<-network.initialize(5)
+add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=0,terminus=1)
+activate.edges(test,onset=3,terminus=5)
+activate.edges(test,onset=-2,terminus=-1)
+
+# test edge.count
+net <-network.collapse(test)
+
+# should not be nD
+if (is.networkDynamic(net)){
+  stop("network.collapse did not correctly remove networkDynamic class attributes from result")
+}
+
+# activity attributes removed?
+if ('active'%in%list.vertex.attributes(net)){
+  stop("network.collapse did not correctly remove vertex activity data from result")
+}
+
+if ('active'%in%list.edge.attributes(net)){
+  stop("network.collapse did not correctly remove edge activity data from result")
+}
+
+# count and druration added
+'activity.count'%in%list.vertex.attributes(net)
+'activity.duration'%in%list.vertex.attributes(net)
+
+if (!all(get.edge.value(net,'activity.count')==c(3,3,3))){
+  stop("network.collapse did not calculate edge activity.count correctly")
+}
+    
+if (!all(get.vertex.attribute(net,'activity.count')==c(1,1,1,1,1))){
+  stop("network.collapse did not calculate vertex activity.count correctly when no vertex spells defined")
+}
+
+if (!all(get.edge.value(net,'activity.duration')==c(4,4,4))){
+  stop("network.collapse did not calculate edge activity.duration correctly")
+}
+
+if (!all(get.vertex.attribute(net,'activity.duration')==c(Inf,Inf,Inf,Inf,Inf))){
+  stop("network.collapse did not calculate vertex activity.duration correctly when to vertex spells defined")
+}
+
+
+# test no edges example
+test<-network.initialize(5)
+activate.vertices(test,onset=0,terminus=5)
+net <-network.collapse(test)
+
+if (!all(get.vertex.attribute(net,'activity.duration')==c(5,5,5,5,5))){
+  stop("network.collapse did not calculate vertex activity.duration correctly")
+}
+
+# test version where only some edges have activity
+test<-network.initialize(5)
+activate.vertices(test)
+add.edges(test, tail=c(1,2,3), head=c(2,3,4))
+activate.edges(test,onset=1,terminus=2,e=2)
+net <-network.collapse(test,onset=1,terminus=4)
+
+if(!all(get.edge.value(net,'activity.count')==c(1,1,1),get.edge.value(net,'activity.duration')==c(3,1,3))){
+  stop("network.collapse did not calculate edge count and duration correctly when only some edges have activity spells")
+}
+
+# test version where only some vertices have activity
+test<-network.initialize(5)
+activate.vertices(test,onset=0,terminus=5,v=2:3)
+net <-network.collapse(test)
+if (!all(get.vertex.attribute(net,'activity.duration')==c(Inf,5,5,Inf,Inf))){
+  stop("network.collapse did not calculate vertex duration correctly when only some vertices have activity")
+}
+
+
+
+# test time parameters
+test<-network.initialize(5)
+add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=0,terminus=1)
+activate.edges(test,onset=3,terminus=5)
+activate.edges(test,onset=-2,terminus=-1)
+activate.edge.attribute(test,'weight',5,onset=3,terminus=4)
+activate.edge.attribute(test,'weight',3,onset=4,terminus=5)
+
+# are attributes flattened correctly?
+net3 <-network.collapse(test,onset=3,terminus=4)
+get.edge.value(net3,'weight')
+
+net4 <-network.collapse(test,onset=4,terminus=5)
+if(!all(all(get.edge.value(net3,'weight')==c(5,5,5),get.edge.value(net4,'weight')==c(3,3,3)))){
+  stop('network.collapse did not flatten attributes as expected')
+}
+
+# if it includes multiple attribute values, should produce warning
+expect_that(net <-network.collapse(test,onset=3,terminus=5), 
+            gives_warning("Multiple attribute values matched query spell"))
+
+# test 'at' version
+net <-network.collapse(test,at=4)
+if (!all(get.edge.value(net,'weight')==c(3,3,3))){
+  stop("network.collapse did not flatten attributes as expected for 'at' param")
+}
+
+
+# test operator version
+net <-test%k%4
+if (!all(get.edge.value(net,'weight')==c(3,3,3))){
+  stop("network.collapse did not flatten attributes as expected for '%k%' operator")
+}
+
+# test for case with null spell Inf,Inf
+net <- network.initialize(3)
+deactivate.vertices(net,onset=-Inf,terminus=Inf,v=1)
+net1<-net%k%1
+
+# test retain.all.vertices
+net <- network.initialize(5)
+set.vertex.attribute(net,'letters',LETTERS[1:5])
+activate.vertices(net,onset=c(0,10,0,0,10),terminus=20)
+
+expect_equal(network.size(network.collapse(net,at=5)),3)
+expect_equal(network.size(network.collapse(net,at=5,retain.all.vertices=TRUE)),5)
+expect_equal(get.vertex.attribute(network.collapse(net,at=5),'letters'),c('A','C','D'))
+
+# test active default
+net<-network.initialize(3)
+activate.vertices(net,v=2:3)
+expect_equal(network.size(network.collapse(net,at=1,active.default=FALSE)),2,info="check active.default param")
+
+
+# check extraction of network size 0
+nd<-activate.vertices(network.initialize(5),onset=1,terminus=Inf)
+net0<-network.collapse(nd,at=0)
+expect_true(is.network(net0),info="check network object returned for net of zero vertices")
+expect_equal(network.size(net0),0,info="check network object returned for net of zero vertices has 0")
+
+#----- get.slices tests -------
+
+#test for get.slices.networkDynamic
+
+test <- network.initialize(5)
+add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=0,terminus=1)
+activate.edges(test,onset=3,terminus=5)
+activate.edges(test,onset=-2,terminus=-1)
+activate.edge.attribute(test,'weight',5,onset=3,terminus=4)
+activate.edge.attribute(test,'weight',3,onset=4,terminus=5,e=1:2)
+
+
+#list <- get.slices.networkDynamic(test,onset=0, terminus=5)
+
+#if(!all(unlist(lapply(list,network.size))==5))
+#  stop("network list encounter errors")
+
+#if(!all(unlist(lapply(list,function(x)x%n%"timestep"))==0:5))
+#  stop("network list encounter errors")
+#lapply(list,function(x)list.vertex.attributes(x))
+#lapply(list,function(x)list.edge.attributes(x))
+#lapply(list,function(x)get.edge.value(x,"weight"))
+#NULL: the edge is not activate at that slice
+#NA: the attribute is not activate at that slice, but the edge is activate
+#Numerical Value: both the edge and the attribute are activate at that slice.
+
+
+# test for get.slices.networkDynamic when onset=-Inf and terminus=Inf
+test <- network.initialize(5)
+add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=-Inf,terminus=Inf)
+activate.edge.attribute(test,'weight',5,onset=3,terminus=4)
+activate.edge.attribute(test,'weight',3,onset=4,terminus=5,e=1:2)
+
+
+#list <- get.slices.networkDynamic(test,onset=0, terminus=5)
+
+#if(!all(unlist(lapply(list,network.size))==5))
+#  stop("network list encounter errors")
+
+#if(!all(unlist(lapply(list,function(x)x%n%"timestep"))==0:5))
+#  stop("network list encounter errors")
+#lapply(list,function(x)list.vertex.attributes(x))
+#lapply(list,function(x)list.edge.attributes(x))
+#lapply(list,function(x)get.edge.value(x,"weight"))
+
+
+cat("ok\n")
