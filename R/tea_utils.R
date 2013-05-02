@@ -526,9 +526,9 @@ activate.edge.attribute <-function(x, prefix, value, onset=NULL, terminus=NULL,l
   }
   
   
-  timedList <- get.edge.attribute(x$mel, attrname,unlist=FALSE);
-  timedList <- lapply(seq_len(length(e)),function(n){
-    timed <- timedList[[n]];
+  timedlist <- get.edge.attribute(x$mel, attrname,unlist=FALSE);
+  timedlist <- lapply(seq_len(length(e)),function(n){
+    timed <- timedlist[[n]];
     if(is.null(timed) || (length(timed)==1 && is.na(timed))){
       # create a new TEA attribute
       return(list(list(value[[n]]),matrix(c(onset[n],terminus[n]),nrow=1,ncol=2)))
@@ -537,7 +537,7 @@ activate.edge.attribute <-function(x, prefix, value, onset=NULL, terminus=NULL,l
       return(insertSpellAndVal(timed[[1]],timed[[2]],value[[n]],onset[[n]],terminus[[n]]))
     }
   })
-  set.edge.attribute(x,attrname,timedList,e=e)
+  set.edge.attribute(x,attrname,timedlist,e=e)
 	set.nD.class(x)
 	if (exists(xn, envir = ev)) 
 	  on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
@@ -929,7 +929,17 @@ deactivate.vertex.attribute <- function (x, prefix, onset=NULL, terminus=NULL,le
   timedlist <- get.vertex.attribute(x, attrname,unlist=FALSE);
   # possibly get rid of values we not using
   
-  timedlist <- timedlist[v]
+  # 4/1,fix problem for v is not entire network nodes.
+  
+#   if(is.null(timedlist)){
+#     warning("intend to deactivate attribute on inactivate vertex")
+#     return(character(0))}
+#   v.act <- which(!unlist(lapply(timedlist,function(x)all(is.na(x)))))
+#   if (!all(v%in%v.act)){
+#     warning("intend to deactivate attribute on inactivate vertex")
+#   v = intersect(v.act,v)}
+#   
+   timedlist <- timedlist[v]
   
   #have to loop instead of just checking if attribute exists because it can exist for some nodes and not others
   
@@ -1099,16 +1109,29 @@ deactivate.edge.attribute <-function(x, prefix, onset=NULL, terminus=NULL,length
   }
   
   
-  timedList <- get.edge.attribute(x$mel,attrname,unlist=FALSE)
+  timedlist <- get.edge.attribute(x$mel,attrname,unlist=FALSE)
   
-  timedList <-lapply(seq_len(length(e)),function(n){
-    timed <- timedList[[n]];
+#   # 4/1,fix problem for e is not entire network edges.
+#   
+#   if(is.null(timedlist)){
+#     warning("intend to deactivate attribute on inactivate edges")
+#     return(character(0))}
+#   e.act <- which(!unlist(lapply(timedlist,function(x)all(is.null(x)))))
+#   if (!all(e%in%e.act)){
+#     warning("intend to deactivate attribute on inactivate edge")
+#     e = intersect(e.act,e)}
+#   
+  
+#   timedlist <- timedlist[e]
+  
+  timedlist <-lapply(seq_len(length(e)),function(n){
+    timed <- timedlist[[n]];
     if (!is.null(timed) && !(length(timed)==1) && !is.na(timed)){ 
       return(
         deactive.spell.attribute(onset=onset[n],terminus=terminus[n],spell.mat=timed[[2]],val.list=timed[[1]])
       )}})
   
-  set.edge.attribute(x,attrname,timedList,e=e)
+  set.edge.attribute(x,attrname,timedlist,e=e)
   set.nD.class(x)
   if (exists(xn, envir = ev)) 
     on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet

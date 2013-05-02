@@ -452,7 +452,7 @@ get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore
   if(vertex.attribute.activity & network.size(x)>0){
     attrs<-list.vertex.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
     for(attr in attrs){
-      vals <- get.vertex.attribute.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)
+      vals <- get.vertex.attribute.active(x,sub('.active','',attr),onset=-Inf,terminus=Inf,return.tea=TRUE)
       vals <- vals[!is.na(vals)]
       times<-c(times, unique(unlist(sapply(vals,'[[',2,simplify=FALSE))))
     }
@@ -460,7 +460,7 @@ get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore
   if(edge.attribute.activity & network.edgecount(x)>0){
     attrs<-list.edge.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
     for(attr in attrs){
-      vals<-get.edge.value.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)
+      vals<-get.edge.attribute.active(x,sub('.active','',attr),onset=-Inf,terminus=Inf,return.tea=TRUE)
       vals<-vals[!is.na(vals)]       
       times<-c(times, unique(unlist(sapply(vals,'[[',2,simplify=FALSE))))
     }
@@ -468,7 +468,7 @@ get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore
   if(network.attribute.activity){
     attrs<-list.network.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
     for(attr in attrs){
-      times<-c(times, unique(as.vector(get.network.attribute.active(x,'test',onset=-Inf,terminus=Inf,return.tea=TRUE)[[2]])))
+      times<-c(times, unique(as.vector(get.network.attribute.active(x,sub('.active','',attr),onset=-Inf,terminus=Inf,return.tea=TRUE)[[2]])))
     }
   }
   
@@ -993,6 +993,10 @@ delete.spell<-function(spells, onset=-Inf, terminus=Inf){
   if(terminus>spells[ns,2] || (terminus==spells[ns,2] &&
                                spells[ns,2]!=spells[ns,1])){
     lrow = ns+1   # the row number of the later rows to save
+  } else if (terminus==spells[ns,2] & 
+               spells[ns,2]==spells[ns,1]) {
+    # when last spell is a matching point interval, keep it
+    lrow <- ns
   } else {
     lrow = min(which(terminus<spells[,2]))
     if(lrow>1 && spells[lrow-1,2]==terminus && spells[lrow-1,1]==terminus)

@@ -687,21 +687,24 @@ get.vertex.spelllist = function (x, v=seq.int(network.size(x)), start=NULL, end=
   
   # grab the list of spells
   node.list <- get.vertex.activity(x,v=v,active.default=active.default)
-  # deal with NA caused by vertices w/o spells defined
+  # deal with NA or nullcaused by vertices w/o spells defined
   if (active.default & length(node.list)>0){
     node.list[is.na(node.list)]<-list(insert.spell(NULL,onset=-Inf,terminus=Inf)) # always active
-  } else {
-    # don't include spell
-    v<-v[!is.na(node.list)]
-    node.list<-node.list[!is.na(node.list)]
-  }
+    node.list[is.null(node.list)]<-list(insert.spell(NULL,onset=-Inf,terminus=Inf)) # always active
+  } 
+  # don't include spell if null or na
+  v<-v[!is.na(node.list)]
+  node.list<-node.list[!is.na(node.list)]
+  v<-v[!sapply(node.list,is.null)]
+  node.list<-node.list[!sapply(node.list,is.null)]
+  
   out <- lapply(seq_along(v), function(i){cbind(node.list[[i]][,1], node.list[[i]][,2],v[i])})
   out <- do.call(rbind, out)
   
   if (is.null(out)) {
-    out = data.frame(onset=numeric(), terminus=numeric(), vertex.id=numeric())
+    out <- data.frame(onset=numeric(), terminus=numeric(), vertex.id=numeric())
   } else {
-    colnames(out) = c("onset", "terminus", "vertex.id")
+    colnames(out) <- c("onset", "terminus", "vertex.id")
   }
   
   out <- data.frame(out)
