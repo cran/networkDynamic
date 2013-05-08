@@ -70,24 +70,24 @@ if(any(!a.results)){
 
 # test vertex attributes stuff
 net<-network.initialize(5)
-activate.vertex.attribute(net,"test","one",onset=0,terminus=2)
-activate.vertex.attribute(net,"test","two",onset=3,terminus=4)
-activate.vertex.attribute(net,"test","three",onset=5,terminus=6)
+activate.vertex.attribute(net,"number","one",onset=0,terminus=2)
+activate.vertex.attribute(net,"number","two",onset=3,terminus=4)
+activate.vertex.attribute(net,"number","three",onset=5,terminus=6)
 
 expect_equal(get.change.times(net),c(0,2,3,4,5,6))
 expect_equal(get.change.times(net,vertex.attribute.activity=FALSE),numeric(0))
 
 # test if only some vertices have attribute
 net<-network.initialize(5)
-activate.vertex.attribute(net,"test","one",onset=0,terminus=2,v=1:2)
+activate.vertex.attribute(net,"number","one",onset=0,terminus=2,v=1:2)
 expect_equal(get.change.times(net),c(0,2),info="checking if only some vertices have activity attribute")
 
 # test edge attribute stuff
 net<-network.initialize(5)
 net[1,2]<-1
-activate.edge.attribute(net,"test","one",onset=0,terminus=2)
-activate.edge.attribute(net,"test","two",onset=3,terminus=4)
-activate.edge.attribute(net,"test","three",onset=5,terminus=6)
+activate.edge.attribute(net,"number","one",onset=0,terminus=2)
+activate.edge.attribute(net,"number","two",onset=3,terminus=4)
+activate.edge.attribute(net,"number","three",onset=5,terminus=6)
 
 expect_equal(get.change.times(net),c(0,2,3,4,5,6),info='check edge attribute activity activity')
 expect_equal(get.change.times(net,edge.attribute.activity=FALSE),numeric(0),info='ignore check edge attribute activity')
@@ -96,7 +96,7 @@ expect_equal(get.change.times(net,edge.attribute.activity=FALSE),numeric(0),info
 net<-network.initialize(5)
 net[1,2]<-1
 net[2,3]<-1
-activate.edge.attribute(net,"test","one",onset=0,terminus=2,e=2)
+activate.edge.attribute(net,"number","one",onset=0,terminus=2,e=2)
 expect_equal(get.change.times(net),c(0,2),info='check if only some edges have activity attribute')
 
 # test with deleted edge
@@ -105,9 +105,9 @@ expect_equal(get.change.times(net),c(0,2),info='check if some edges deleted')
 
 # test network attribute stuff
 net<-network.initialize(5)
-activate.network.attribute(net,"test","one",onset=0,terminus=2)
-activate.network.attribute(net,"test","two",onset=3,terminus=4)
-activate.network.attribute(net,"test","three",onset=5,terminus=6)
+activate.network.attribute(net,"number","one",onset=0,terminus=2)
+activate.network.attribute(net,"number","two",onset=3,terminus=4)
+activate.network.attribute(net,"number","three",onset=5,terminus=6)
 
 expect_equal(get.change.times(net),c(0,2,3,4,5,6),info='check network attribute activity activity')
 expect_equal(get.change.times(net,network.attribute.activity=FALSE),numeric(0),info='ignore check network attribute activity')

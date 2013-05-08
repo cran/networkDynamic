@@ -738,7 +738,6 @@ expect_equal(list.vertex.attributes.active(net,onset=-Inf, terminus=Inf),list.ve
 expect_true(is.null(list.vertex.attributes.active(network.initialize(0))))
 
 
-
 ##########################################################################
 ##########################################################################
 #----- list.edge.attriubtes.active----
@@ -856,6 +855,9 @@ if(!all(nd$val[[1]]$letters.active[[1]][[1]]=="NA",
 }
 
 
+
+
+
 ##########################################################################
 #testing if the deactivating period across two spells
 ##########################################################################
@@ -921,15 +923,20 @@ deactivate.vertex.attribute(network.initialize(0),'foo')
 #initialize network
 test<-network.initialize(5)
 #activate vertex attribute
-test<-activate.vertex.attribute(test,"letter","a",onset=0,terminus=3,v=1:4) 
+test<-activate.vertex.attribute(test,"letter","a",onset=0,terminus=3,v=1:4)
+
+# #deactive vertex attribute
+# expect_warning(deactivate.vertex.attribute(test, "letter", onset=0, terminus=3),"intend to deactivate attribute on inactivate vertex")# need to fix this
+# 
 test <- deactivate.vertex.attribute(test, "letter", onset=0, terminus=3)
 
-expect_equal(get.vertex.attribute.active(test,'letter',at=1),c(NA,NA,NA,NA,NA))
+if(length(list.vertex.attributes.active(test, onset=0,terminus=3,dynamic.only=T))!=0)
+  stop("error with deactivating the non-activate vertex")
 
 
-
-#------- testing if the deactivating single/two vertex attributes
-
+##########################################################################
+#04/04, testing if the deactivating single/two vertex attributes
+##########################################################################
 
 
 nd <- network.initialize(5)
@@ -1087,7 +1094,7 @@ expect_warning(deactivate.edge.attribute(network.initialize(0),'foo'), 'does not
 
 
 ##########################################################################
-# --------------- testing if the deactivating inacitivate edge attribute
+#04/01, testing if the deactivating inacitivate edge attribute
 ##########################################################################
 nd <- network.initialize(5)
 add.edge(nd,1,2)

@@ -80,6 +80,7 @@ list.network.attributes.active(x, onset = NULL, terminus = NULL,length = NULL,
                 dynamic.only = FALSE)
 
 }
+
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{

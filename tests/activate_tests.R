@@ -2202,5 +2202,12 @@ expect_equal(network.size.active(delete.vertex.activity(network.initialize(0)),o
 
 expect_equal(network.edgecount.active(delete.edge.activity(network.initialize(0)),onset=-Inf,terminus=Inf),0)
 
+# this triggered error for issue #298
+net<-network.initialize(2)
+activate.vertices(net,at=1)
+activate.vertices(net,at=5)
+deactivate.vertices(net,onset=-Inf,terminus=5)
+expect_equal(as.numeric(get.vertex.activity(net)[[1]]),c(5,5))
+
 cat("ok\n")
 

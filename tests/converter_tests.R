@@ -78,6 +78,17 @@ expect_equal(get.vertex.activity(network.initialize(1),active.default=FALSE)[[1]
 
 expect_equal(nrow(get.vertex.activity(network.initialize(0),as.spellList=TRUE)),0)
 
+# test with deleted spell (was failing in v 0.4)
+net<-network.initialize(3)
+delete.vertex.activity(net,v=2)
+expect_equal(get.vertex.activity(net,as.spellList=TRUE)$onset,c(-Inf,-Inf,-Inf))
+
+# test with deactiviate spell (was failing in v 0.4)
+net<-network.initialize(3)
+deactivate.vertices(net,v=2)
+expect_equal(get.vertex.activity(net,as.spellList=TRUE)$onset,c(-Inf,-Inf))
+expect_equal(nrow(get.vertex.activity(net,as.spellList=TRUE,active.default=FALSE)),0)
+
 
 
 # --------------- networkDynamic() conversion test -----
