@@ -1,3 +1,11 @@
+%  Part of the statnet package, http://statnetproject.org
+%
+%  This software is distributed under the GPL-3 license.  It is free,
+%  open source, and has the attribution requirements (GPL Section 7) in
+%    http://statnetproject.org/attribution
+%
+%  Copyright 2013 the statnet development team
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \name{networkDynamic}
 \alias{networkDynamic}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -13,12 +21,12 @@ networkDynamic(base.net = NULL, edge.toggles = NULL, vertex.toggles =NULL,
                  edge.changes = NULL, vertex.changes = NULL,
                  network.list = NULL, onsets = NULL, termini = NULL,
                  vertex.pid = NULL, start = NULL, end = NULL, 
-                 net.obs.period=NULL,verbose=TRUE,...)
+                 net.obs.period=NULL,verbose=TRUE,create.TEAs = FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{base.net}{
- A network (or network-coearceable) object which will be used to define network-level properties (directedness,etc) of the output network. When constructing from toggles, the edges in base.net give the initially active set of edges and verticies. that the activity states will be toggled from. 
+ A network (or network-coearceable) object which will be used to define network-level properties (directedness,etc) of the output network. When constructing from toggles, the edges in base.net give the initially active set of edges and vertices that the activity states will be toggled from. Network and vertex attributes of \code{base.net} will be copied to output (unless they are overwritten by dynamic attributes with the same names) 
 }
   \item{edge.spells}{
 A matrix or data.frame of spells specifying edge timing. Assumed to be [onset,terminus,tail vertex.id, head vertex.id]
@@ -39,7 +47,7 @@ A matrix or data.frame of toggles giving a sequence of activation and deactivati
   A matrix or data.frame of vertex changes with at least 3 columns, assumed to be [time, vertex.id,direction]
  }
  \item{network.list}{
-  a list of network objects assumed to describe sequential panels of network observations. Network sizes may vary if some vertices are only active in certain panels. See onsets, termini, vertex.pid. If base.net not specified, first element of list will be used as base.net. 
+  a list of network objects assumed to describe sequential panels of network observations. Network sizes may vary if some vertices are only active in certain panels. See onsets, termini, vertex.pid. If base.net not specified, first element of list will be used as base.net. Network, vertex, and edge attributes will be converted to TEAs. 
  }
  \item{onsets}{
  an optional array of onset times to be assigned to the network panels of network.list. defaults to seq(from=0,length=length(network.list)-1) 
@@ -58,33 +66,47 @@ Optional argument to indicate the earliest time at which any changes in the netw
 Optional argument to indicate the latest time at which any changes in the network could have been observed or simulated; any spells after this time point are considered terminus-censored.
 }
  \item{net.obs.period}{
-  Optional arugment. A structured list for providing additional information about when and how the network was observed. 
+  Optional argument. A structured list for providing additional information about when and how the network was observed. 
   }
  \item{verbose}{
  Logical, If TRUE (default), status message will be printed about the assumptions made in the conversion process. 
  }
+ \item{create.TEAs}{If TRUE, Dynamic TEA attributes will be created corresponding to the static attributes appear on the network elements of \code{network.list}
+ 
+ }
   \item{\dots}{
-Additional arguments controling the creating of the network or processing of attached data objects.
+Additional arguments controlling the creating of the network or processing of attached data objects.
 }
 }
 \details{
-This function provides ways to convert multiple forms of timing information for vertices and edges into network dynamic objects. A magic fairy looks at the input data and constructs the appropriate network. Specification is located at \url{https://statnet.csde.washington.edu/trac/wiki/NetworkDynamicConverterFunctions}
+This function provides ways to convert multiple forms of timing information for vertices and edges into network dynamic objects. 
+
+If the timing information is provided in the form of a lists of networks (specified by the \code{network.list} argument ) the assumption is that each network is a discrete `panel' observation indicating the active set vertices and edges.  By default, each observation is assumed to span a unit interval, (so the 1st goes from 0 to 1, 2nd from 1-2, etc). However, the onset and termini of each observation panel can be explicitly specified via the \code{onsets} and \code{termini} arguments. If the networks in \code{network.list} vary in size, the name of a vertex attribute to be used as a persistent id  must be specified using the \code{vertex.pid} attribute so that the vertices in each network can be matched up correctly.  If \code{create.TEAs=TRUE}, dynamic attributes will be created for any (non-default) attributes appearing in the list of networks.  Otherwise, network and vertex attributes will be copied from the network specified via \code{base.net}.  If \code{base.net} is not specified, the first element of \code{network.list} will be used.  A \code{\link{net.obs.period}} will be constructed to describe the range of observations used to construct the network, or one can be specified directly using the \code{net.obs.period} argument. 
+
+Alternatively, timing information for edges and vertices can be provided separately as matrices or data.frames in the forms of tables of spells, changes, or toggles.  For vertices, the arguments are \code{vertex.spells}, \code{vertex.changes} or \code{vertex.toggles}. The columns for each argument have a specific order and function, indicated in the argument definitions above. Edge arguments are named similarly \code{edge.spells}, \code{edge.changes} or \code{edge.toggles}. The vertex ids and `head' and `tail' ids must be integer index ids.   Network properties (number of vertices, bipartite, directedness, etc) can currently be specified by including a \code{base.net} argument to be used as a template, network and vertex attributes will be copied from \code{base.net} as well.  If only edge information is provided, the network size will be imputed from the set of edge endpoints.  In the \code{edge.toggles} case, the edges present in \code{base.net} provide the initial state to be toggled from. 
+
+When constructing a network with separate sources of data for vertex and edge timing, edge and vertex activity will not be made consistent if input date is inconsistent -- edges may be active when their incident vertices are inactive, etc.  These situations can be detected using the \code{\link{network.dynamic.check}} function and possible resolved using one of the \code{\link{reconcile.activity}} functions.
+
+
+Specification is located at \url{https://statnet.csde.washington.edu/trac/wiki/NetworkDynamicConverterFunctions}
+
+
 }
 \value{
-A networkDynamic object with vertex and edge timing specified by the input data. 
+A networkDynamic object with vertex and edge timing specified by the input data. It will also print out information about the assumptions it makes while constructing the network.  
 }
 
 \author{
  Li Wang lxwang@uw.edu, skyebend, statnet team
 }
 \note{
-This function provides the features that were formerly called using as.networkDynamic.* syntax.  This version does not yet handle conversion of vertex, edge and network attributes of network.list items into TEA attributes, or importing TEA attributes using additional columns of input data.frames.  These functions are expected in the v0.5 release.
+This function provides the features that were formerly (in versions < 0.4) called using as.networkDynamic.* syntax.  This version does not yet handle importing TEA attributes using additional columns of input data.frames.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-See Also as \code{\link{get.edge.activity}},\code{\link{get.vertex.activity}}
+See Also as \code{\link{get.edge.activity}},\code{\link{get.vertex.activity}}, \code{\link{network.dynamic.check}}
 }
 \examples{
 
@@ -132,6 +154,13 @@ for(r in 1:nrow(rawEdges)){
   activate.edge.attribute(cls33,'weight',rawEdges$weight[r],
           onset=rawEdges$start_minute[r],terminus=rawEdges$end_minute[r],e=eid)
 }
+
+# convert the set of newcomb panels with rank weights
+data(newcomb)
+newRankDyn <-networkDynamic(network.list=newcomb.rank)
+get.network.attribute.active(newRankDyn,'title',at=3)
+as.matrix(network.collapse(newRankDyn,at=5),attrname='rank')
+
 }
 
 

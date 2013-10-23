@@ -1,4 +1,11 @@
-# when all tests pass, warnings should be changed to stop
+#  Part of the statnet package, http://statnetproject.org
+#
+#  This software is distributed under the GPL-3 license.  It is free,
+#  open source, and has the attribution requirements (GPL Section 7) in
+#    http://statnetproject.org/attribution
+#
+#  Copyright 2013 the statnet development team
+######################################################################
 
 require(networkDynamic)
 require(testthat)
@@ -373,6 +380,15 @@ nd2 <- activate.edge.attribute(nd,"letters","z",onset=-1,terminus=0)
 if(!all(deparse(nd2)==deparse(nd))){
   stop("activate.edge.attribute did not return modified network argument or it does not match argument modified in place")
 }
+
+# test bug #523 where edge values getting incorrectly permuted when using e argument
+
+test<-network.initialize(3)
+add.edges.active(test,tail=1,head=2,onset=0,terminus=1)
+add.edges.active(test,tail=2,head=3,onset=2,terminus=3)
+activate.edge.attribute(test,'letter','a',onset=0,terminus=1,e=1)
+activate.edge.attribute(test,'letter','b',onset=2,terminus=3,e=2)
+expect_equal(get.edge.attribute.active(test,'letter',at=0),c("a",NA)) # this was returning c("a","a")
 
 # what if an edge is null because it was deleted
 
@@ -1127,4 +1143,27 @@ if(!all(nd$gal$test.active[[1]][[1]] == "a",
 }
 
 
+# ---- test 'earliest' and 'latest' attribute aggregation rules ----
+test<-network.initialize(1)
+activate.vertex.attribute(test,'letter',"a",onset=0,terminus=1)
+activate.vertex.attribute(test,'letter',"b",onset=1,terminus=2)
+activate.vertex.attribute(test,'letter',"c",onset=2,terminus=3)
+expect_equal(get.vertex.attribute.active(test,'letter',onset=0,terminus=4,rule='earliest'),'a')
+expect_equal(get.vertex.attribute.active(test,'letter',onset=0,terminus=4,rule='latest'),'c')
+
+test<-network.initialize(2)
+test[1,2]<-1
+activate.edge.attribute(test,'letter',"a",onset=0,terminus=1)
+activate.edge.attribute(test,'letter',"b",onset=1,terminus=2)
+activate.edge.attribute(test,'letter',"c",onset=2,terminus=3)
+expect_equal(get.edge.attribute.active(test,'letter',onset=0,terminus=4,rule='earliest'),'a')
+expect_equal(get.edge.attribute.active(test,'letter',onset=0,terminus=4,rule='latest'),'c')
+
+
+test<-network.initialize(1)
+activate.network.attribute(test,'letter',"a",onset=0,terminus=1)
+activate.network.attribute(test,'letter',"b",onset=1,terminus=2)
+activate.network.attribute(test,'letter',"c",onset=2,terminus=3)
+expect_equal(get.network.attribute.active(test,'letter',onset=0,terminus=4,rule='earliest'),'a')
+expect_equal(get.network.attribute.active(test,'letter',onset=0,terminus=4,rule='latest'),'c')
 

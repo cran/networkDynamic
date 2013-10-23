@@ -1,3 +1,13 @@
+#  Part of the statnet package, http://statnetproject.org
+#
+#  This software is distributed under the GPL-3 license.  It is free,
+#  open source, and has the attribution requirements (GPL Section 7) in
+#    http://statnetproject.org/attribution
+#
+#  Copyright 2013 the statnet development team
+######################################################################
+
+
 ########################################################################
 # This file contains the testing suite for the "activate" methods, i.e.:
 #      activate.edges        deactivate.edges
@@ -529,6 +539,12 @@ if(any(!f.results)){
 # no edges, so should do nothing (but not crash)
 expect_equal(network.edgecount(activate.edges(network.initialize(0))),0)
 
+# test activate multiple spells for same edge
+test<-network.initialize(3)
+test[1,2]<-1
+activate.edges(test,onset=c(1,2),terminus=c(2,3),e=c(1,1))
+expect_equal(as.numeric(as.data.frame(test)[,1:4]),c(1,3,1,2),info='test that activate edges merges spells if e includes repeated ids')
+
 cat("ok\n")
 
 
@@ -1046,6 +1062,11 @@ if(any(!f.results)){
 
 # should do nothing, since no verts to activate
 expect_equal(is.active(activate.vertices(network.initialize(0),at=1),at=1),logical(0))
+
+# test activating multiple spells per vertex
+test <- network.initialize(3)
+activate.vertices(test,onset=0:3,terminus=1:4,v=c(1,2,3,1))
+expect_equal(get.vertex.activity(test, as.spellList=TRUE)[,1:3],as.data.frame(matrix(c(0,1,1, 3,4,1, 1,2,2, 2,3,3),byrow=TRUE,ncol=3)),check.attributes=FALSE, info="check activating multiple spells on a single vertex")
 
 
 cat("ok\n")
