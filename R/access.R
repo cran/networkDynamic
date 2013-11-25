@@ -103,13 +103,16 @@ activate.edges <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
     }
     if(length(e)==0)  return(invisible(set.nD.class(x)))
 
+    uniqueE<-unique(e)
     # get current active matrices and insert spells
-    active <- lapply(lapply(x$mel[e], "[[", "atl"), "[[", "active")
-    for(i in 1:length(active)){
-      if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
-        active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    active <- lapply(lapply(x$mel[uniqueE], "[[", "atl"), "[[", "active")
+    infMat<-matrix(c(-Inf,Inf),1,2) # declare here to speed comparisons
+    for(i in seq_len(length(e))){
+      eIndex<-which(uniqueE==e[i])
+      if(!(identical(active[[eIndex]], infMat)))
+        active[[eIndex]] <- insert.spell(active[[eIndex]], onset[i], terminus[i])
     }
-    set.edge.attribute(x, "active", active, e)
+    set.edge.attribute(x, "active", active, e=uniqueE)
   }
   
   set.nD.class(x)
@@ -185,12 +188,15 @@ activate.vertices <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
   if(length(v) > 0) {
 
     # get current active matrices and insert spells
-    active <- lapply(x$val[v], "[[", "active")
-    for(i in 1:length(active)){
-      if(!(identical(active[[i]], matrix(c(-Inf,Inf),1,2))))
-        active[[i]] <- insert.spell(active[[i]], onset[i], terminus[i])
+    uniqueV<-unique(v)
+    active <- lapply(x$val[uniqueV], "[[", "active")
+    infMat<-matrix(c(-Inf,Inf),1,2)
+    for(i in 1:length(v)){
+      index<-which(uniqueV==v[i])
+      if(!(identical(active[[index]], infMat)))
+        active[[index]] <- insert.spell(active[[index]], onset[i], terminus[i])
     }
-    set.vertex.attribute(x, "active", active, v)
+    set.vertex.attribute(x, "active", active, uniqueV)
   }
 
   set.nD.class(x)
@@ -630,10 +636,16 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
   }
 
   # vertices or edges?
-  if(length(e))
+  if(length(e)){
+    origelen<-length(e)
     e <- e[!sapply(x$mel[e], is.null)]  # filter out non-edges
+    # if e were ommited due to null edges, give warning
+    if (length(e)< origelen){
+      warning("Some edge IDs in the e argument correspond to deleted edges and will be ignored. Indices of values returned will not correspond to elements of e.")
+    }
+  }
   if(length(v))
-    v <- v[!sapply(x$val[v], is.null)]  # filter out non-vertices
+    v <- v[!sapply(x$val[v], is.null)]  # filter out non-vertices TODO: can this happen?
   if(length(e)+length(v)==0)
     return(logical(0))
   if(length(e)){
@@ -662,11 +674,9 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
     stop("Onset times must precede terminus times in is.active.\n")
   act<-rep(FALSE,length(active))  
   if(match.arg(rule)=="all")
-    int.query.true <- function(x,y,z){y >= x[1] && z <= x[2]}
+    int.query.true <- match.rule.all  # use the match rule defined in tea_utils.R
   else
-    int.query.true <- function(x,y,z){(y >= x[1] && y <  x[2]) ||
-                                      (z >  x[1] && z <= x[2]) ||
-                                      (y <= x[1] && z >= x[2] && !(x[2]==x[1] && terminus==x[2]))}
+    int.query.true <- match.rule.any
 
   # main loop  
   for(i in seq_along(active)){
@@ -716,7 +726,7 @@ network.dyadcount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, a
 
   if (is.bipartite(x)) {
     bip = x%n%"bipartite"
-    nactor <- ifelse(bip > 0,sum(is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
+    nactor <- ifelse(bip >= 0,sum(is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
                                            v=seq_len(bip),rule=rule, active.default=active.default)),
                      0)
     nevent <- ifelse(x%n%"n">0 && bip<x%n%"n",sum(is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
@@ -765,8 +775,7 @@ network.edgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, a
                                     rule=c("any","all"), na.omit = TRUE, active.default=TRUE){
   if(x%n%"mnext">1){
     act<-is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
-                 e=seq_len(x%n%"mnext"-1), v=NULL,rule=rule, active.default=active.default)
-    act<-act[!sapply(x$mel,is.null)]
+                 e=valid.eids(x), v=NULL,rule=rule, active.default=active.default)
     if(na.omit)
       sum(act*(1-(x%e%"na")))
     else
@@ -782,8 +791,7 @@ network.naedgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL,
                                       rule=c("any","all"), active.default=TRUE){
   if(x%n%"mnext">1) {
     act<-is.active(x=x,onset=onset,terminus=terminus,length=length, at=at,
-                   e=seq_len(x%n%"mnext"-1),v=NULL,rule=rule, active.default=active.default)
-    act<-act[!sapply(x$mel,is.null)]
+                   e=valid.eids(x),v=NULL,rule=rule, active.default=active.default)
     sum(act*(x%e%"na"))
   }else{
     0

@@ -194,12 +194,19 @@ is.networkDynamic(flat)
 get.change.times(flat)
 network.edgecount(flat)
 list.edge.attributes(flat)
+
+
+###################################################
+### code chunk number 22: collapse2
+###################################################
+flat <-network.collapse(triangle,onset=1,terminus=3,rm.time.info=FALSE)
+flat%v%'activity.duration'
 flat%e%'activity.count'
 flat%e%'activity.duration'
 
 
 ###################################################
-### code chunk number 22: delete_times
+### code chunk number 23: delete_times
 ###################################################
 delete.edge.activity(triangle)
 delete.vertex.activity(triangle)
@@ -208,7 +215,7 @@ get.vertex.activity(triangle)
 
 
 ###################################################
-### code chunk number 23: any_all
+### code chunk number 24: any_all
 ###################################################
 query <- network.initialize(2)
 query[1,2] <-1
@@ -219,7 +226,7 @@ is.active(query,onset=1,terminus=3,rule='any',e=1)
 
 
 ###################################################
-### code chunk number 24: newcomb
+### code chunk number 25: newcomb
 ###################################################
 require(networkDynamic)
 data(newcomb)             # load the data
@@ -231,7 +238,7 @@ get.change.times(newcombDyn)
 
 
 ###################################################
-### code chunk number 25: newcomb2
+### code chunk number 26: newcomb2
 ###################################################
 all(as.sociomatrix(newcomb[[5]]) == 
       as.sociomatrix(network.extract(newcombDyn,at=5)))
@@ -241,7 +248,7 @@ all(as.sociomatrix(newcomb[[5]]) ==
 
 
 ###################################################
-### code chunk number 26: newcomb3
+### code chunk number 27: newcomb3
 ###################################################
 newcombGaps <- networkDynamic(network.list=newcomb,
                       onsets=c(1:8,10:15),termini=c(2:9,11:16))
@@ -249,17 +256,18 @@ get.vertex.activity(newcombGaps)[[1]] # peek at spells for v1
 
 
 ###################################################
-### code chunk number 27: alterNewcombNetObs
+### code chunk number 28: alterNewcombNetObs
 ###################################################
 nobs <-get.network.attribute(newcombGaps,'net.obs.period')
 names(nobs)
 nobs$'time.unit'<-'week'
 nobs$'mode'<-'discrete'
+nobs$'time.increment'<-1
 set.network.attribute(newcombGaps,'net.obs.period',nobs)
 
 
 ###################################################
-### code chunk number 28: toggles
+### code chunk number 29: toggles
 ###################################################
 toggles <-cbind(time=1:1000,
                     tail=sample(1:10,1000,replace=TRUE),
@@ -270,7 +278,7 @@ randomNet <-networkDynamic(base.net=empty,edge.toggles=toggles)
 
 
 ###################################################
-### code chunk number 29: toggles2
+### code chunk number 30: toggles2
 ###################################################
 edgeDurations<-get.edge.activity(randomNet,as.spellList=TRUE)$duration
 hist(edgeDurations)
@@ -278,13 +286,13 @@ summary(edgeDurations)
 
 
 ###################################################
-### code chunk number 30: toggles3
+### code chunk number 31: toggles3
 ###################################################
 sum(get.edge.activity(randomNet,as.spellList=TRUE)$terminus.censored)
 
 
 ###################################################
-### code chunk number 31: toggles4
+### code chunk number 32: toggles4
 ###################################################
 nEdgesActive<-sapply(0:1000,
               function(t){network.edgecount.active(randomNet,at=t)})
@@ -292,7 +300,7 @@ plot(nEdgesActive,xlab='timestep',ylab='number of active edges')
 
 
 ###################################################
-### code chunk number 32: file_spells
+### code chunk number 33: file_spells
 ###################################################
 vertexData <-read.table(system.file('extdata/cls33_10_16_96_vertices.tsv', 
             package='networkDynamic'),,header=T)
@@ -303,20 +311,20 @@ edgeData[1:5,] # peek
 
 
 ###################################################
-### code chunk number 33: assemble_mcfarland
+### code chunk number 34: assemble_mcfarland
 ###################################################
 classDyn <- networkDynamic(vertex.spells=vertexData[,c(3,4,1)],
                            edge.spells=edgeData[,c(3,4,1,2)])
 
 
 ###################################################
-### code chunk number 34: checkDiscrete
+### code chunk number 35: checkDiscrete
 ###################################################
 get.change.times(classDyn)[1:10]
 
 
 ###################################################
-### code chunk number 35: alterNetObs
+### code chunk number 36: alterNetObs
 ###################################################
 nobs <-get.network.attribute(classDyn,'net.obs.period')
 names(nobs)
@@ -325,14 +333,13 @@ set.network.attribute(classDyn,'net.obs.period',nobs)
 
 
 ###################################################
-### code chunk number 36: mcfarland_vertattr
+### code chunk number 37: mcfarland_vertattr
 ###################################################
 nrow(vertexData)==length(unique(vertexData$vertex_id))
 
 
-
 ###################################################
-### code chunk number 37: mcfarland_vertexattr2
+### code chunk number 38: mcfarland_vertexattr2
 ###################################################
 set.vertex.attribute(classDyn,"data_id",vertexData$data_id)
 set.vertex.attribute(classDyn,"sex",as.character(vertexData$sex))
@@ -340,18 +347,15 @@ set.vertex.attribute(classDyn,"role",as.character(vertexData$role))
 
 
 ###################################################
-### code chunk number 38: classroom_binning
+### code chunk number 39: classroom_binning
 ###################################################
-startTimes <-seq(from=0,to=40,by=5) # make a list of times 
-classNets <- lapply(startTimes, function(t){ 
-  network.extract(classDyn,onset=t,terminus=t+5)})
-classMats <- lapply(classNets,as.sociomatrix) # make into matrices
+classNets <- get.networks(classDyn,start=0,end=50,time.increment=5,rule='latest')
 classDensity <- sapply(classNets, network.density) 
 plot(classDensity,type='l',xlab='network slice #',ylab='density')
 
 
 ###################################################
-### code chunk number 39: class_plots
+### code chunk number 40: class_plots
 ###################################################
 par(mfrow=c(2,2))   # show multiple plots
 plot(network.extract(
@@ -369,39 +373,114 @@ plot(network.extract(
 
 
 ###################################################
-### code chunk number 40: newcomb_spells
+### code chunk number 41: pids1
+###################################################
+haystack<-network.initialize(30)
+activate.vertices(haystack,v=10:20)
+
+
+###################################################
+### code chunk number 42: pids2
+###################################################
+set.vertex.attribute(haystack,'needle',TRUE,v=sample(10:20,2))
+
+
+###################################################
+### code chunk number 43: pids3
+###################################################
+set.vertex.attribute(haystack,'hayId',paste('straw',1:30,sep=''))
+set.network.attribute(haystack,'vertex.pid','hayId')
+
+
+###################################################
+### code chunk number 44: pids4
+###################################################
+newstack<-network.extract(haystack,at=100,active.default=FALSE)
+network.size(newstack)
+needleIds <-which(get.vertex.attribute(newstack,'needle'))
+needleIds
+
+
+###################################################
+### code chunk number 45: pids5
+###################################################
+get.vertex.pid(newstack,needleIds)
+get.vertex.id(haystack,get.vertex.pid(newstack,needleIds))
+
+
+###################################################
+### code chunk number 46: pids6
+###################################################
+set.network.attribute(classDyn,'vertex.pid','data_id')
+
+
+###################################################
+### code chunk number 47: nonpid_delete_example
+###################################################
+net<-network.initialize(3)
+add.vertices(net,1)
+delete.vertices(net,2)
+# notice the NA value
+as.matrix(net)
+
+
+###################################################
+### code chunk number 48: pid_delete_example
+###################################################
+net<-network.initialize(3)
+set.network.attribute(net,'vertex.pid','vertex.names')
+add.vertices(net,1,vertex.pid='4')
+add.vertices(net,1)
+delete.vertices(net,2)
+as.matrix(net)
+
+
+###################################################
+### code chunk number 49: initialize.pids
+###################################################
+net<-network.initialize(3)
+add.edges(net,tail=1:2,head=2:3)
+initialize.pids(net)
+net%v%'vertex.pid'
+net%e%'edge.pid'
+
+
+###################################################
+### code chunk number 50: newcomb_spells
 ###################################################
 newcombEdgeSpells<-get.edge.activity(newcombDyn,as.spellList=TRUE)
 newcombEdgeSpells[1:5,] # peek at the beginning
 
 
 ###################################################
-### code chunk number 41: newcomb_dataframe
+### code chunk number 51: newcomb_dataframe
 ###################################################
 newcombEdgeSpells<-as.data.frame(newcombDyn)
 newcombEdgeSpells[1:5,] # peek at the beginning
 
 
 ###################################################
-### code chunk number 42: newcomb_vertspells
+### code chunk number 52: newcomb_vertspells
 ###################################################
 vertSpells <- get.vertex.activity(newcombDyn,as.spellList=TRUE)
 vertSpells[1:5,]
 
 
 ###################################################
-### code chunk number 43: slice_nets
+### code chunk number 53: slice_nets
 ###################################################
-onsets<-0:2
-slices<-lapply(onsets,function(t){
-          network.extract(randomNet,onset=t,terminus=t+1)
-        })
-is.network(slices[[1]])
-lapply(slices,as.matrix) # print 'em out as matrices
+lapply(get.networks(randomNet,start=0,end=2,time.increment=1),as.matrix)
 
 
 ###################################################
-### code chunk number 44: tea1
+### code chunk number 54: slice_nets2
+###################################################
+newSlices<-get.networks(newcombGaps)
+sapply(newSlices,network.size)
+
+
+###################################################
+### code chunk number 55: tea1
 ###################################################
 net <-network.initialize(5)
 activate.vertex.attribute(net,"happiness", -1, onset=0,terminus=1)
@@ -413,7 +492,7 @@ get.vertex.attribute(net,"happiness.active",unlist=FALSE)[[1]]
 
 
 ###################################################
-### code chunk number 45: tea1.1
+### code chunk number 56: tea1.1
 ###################################################
 activate.network.attribute(net,'colors',"red",
                            onset=0,terminus=1)
@@ -425,7 +504,7 @@ activate.edge.attribute(net,'weight',c(1,2,1),onset=3,terminus=7)
 
 
 ###################################################
-### code chunk number 46: tea2
+### code chunk number 57: tea2
 ###################################################
 get.vertex.attribute.active(net,"happiness",at=3.5)
 get.vertex.attribute.active(net,"happiness",
@@ -435,13 +514,13 @@ get.vertex.attribute.active(net,"happiness",
 
 
 ###################################################
-### code chunk number 47: tea3
+### code chunk number 58: tea3
 ###################################################
 get.vertex.attribute.active(net,"happiness",onset=2.5,terminus=4.5)
 
 
 ###################################################
-### code chunk number 48: tea3_hidden
+### code chunk number 59: tea3_hidden
 ###################################################
 cat('Warning message:
 In get.vertex.attribute.active(net, "happiness", onset = 2.5, 
@@ -450,14 +529,26 @@ In get.vertex.attribute.active(net, "happiness", onset = 2.5,
 
 
 ###################################################
-### code chunk number 49: tea4
+### code chunk number 60: tea3.1
+###################################################
+get.vertex.attribute.active(net,"happiness",onset=2.5,terminus=4.5,rule='earliest')
+
+
+###################################################
+### code chunk number 61: tea3.2
+###################################################
+get.vertex.attribute.active(net,"happiness",onset=2.5,terminus=4.5,rule='latest')
+
+
+###################################################
+### code chunk number 62: tea4
 ###################################################
 get.vertex.attribute.active(net,"happiness",onset=2.5,terminus=4.5,
                         return.tea=TRUE)[[1]]
 
 
 ###################################################
-### code chunk number 50: tea5
+### code chunk number 63: tea5
 ###################################################
 sapply(get.vertex.attribute.active(net,"happiness",onset=0,terminus=7,
                   return.tea=TRUE),function(splist){
@@ -466,14 +557,14 @@ sapply(get.vertex.attribute.active(net,"happiness",onset=0,terminus=7,
 
 
 ###################################################
-### code chunk number 51: tea5.1
+### code chunk number 64: tea5.1
 ###################################################
 get.edge.attribute.active(net,'weight',at=2)
 get.edge.attribute.active(net,'weight',at=5)
 
 
 ###################################################
-### code chunk number 52: listtea
+### code chunk number 65: listtea
 ###################################################
 list.vertex.attributes.active(net,at=2)
 list.edge.attributes.active(net,at=2)
@@ -481,21 +572,21 @@ list.network.attributes.active(net,at=2,dynamic.only=TRUE)
 
 
 ###################################################
-### code chunk number 53: tea6
+### code chunk number 66: tea6
 ###################################################
 activate.vertex.attribute(net, "happiness",100, onset=0,terminus=10,v=1)
 get.vertex.attribute.active(net,"happiness",at=2)
 
 
 ###################################################
-### code chunk number 54: tea7
+### code chunk number 67: tea7
 ###################################################
 deactivate.vertex.attribute(net, "happiness",onset=1,terminus=10,v=2)
 get.vertex.attribute.active(net,"happiness",at=2)
 
 
 ###################################################
-### code chunk number 55: windsurfers
+### code chunk number 68: windsurfers
 ###################################################
 data(windsurfers)    # let's go to the beach!
 range(get.change.times(windsurfers))
@@ -504,7 +595,7 @@ sapply(0:31,function(t){ # how many people in net each day?
 
 
 ###################################################
-### code chunk number 56: windsurfers_meta
+### code chunk number 69: windsurfers_meta
 ###################################################
 list.network.attributes.active(windsurfers,-Inf,Inf,dynamic.only=TRUE)
 par(mfcol=c(2,1)) # show multiple plots
@@ -520,7 +611,7 @@ par(mfcol=c(1,1))
 
 
 ###################################################
-### code chunk number 57: windsurfers_meta2
+### code chunk number 70: windsurfers_meta2
 ###################################################
 day3 <-network.collapse(windsurfers,at=2)
 day3%n%'day' # what day of the week is day 3?
@@ -528,7 +619,7 @@ day3%n%'atmp' # air temp?
 
 
 ###################################################
-### code chunk number 58: windsim
+### code chunk number 71: windsim
 ###################################################
 runSim<-function(net,timeStep,transProb){
   # loop through time, updating states
@@ -566,13 +657,13 @@ runSim<-function(net,timeStep,transProb){
 
 
 ###################################################
-### code chunk number 59: setseed
+### code chunk number 72: setseed
 ###################################################
 set.seed(123) # so we will get the same results each time the document is built
 
 
 ###################################################
-### code chunk number 60: windsim_params
+### code chunk number 73: windsim_params
 ###################################################
 timeStep <- 1  # units are in days
 transProb <- 0.2 # how likely to tell in each conversation/day
@@ -585,7 +676,7 @@ windsurfers<-runSim(windsurfers,timeStep,transProb) # run it!
 
 
 ###################################################
-### code chunk number 61: windsim_plots
+### code chunk number 74: windsim_plots
 ###################################################
 par(mfcol=c(1,2)) # show two plots side by side
 wind7<-network.extract(windsurfers,at=7)
@@ -606,7 +697,7 @@ par(mfcol=c(1,1))
 
 
 ###################################################
-### code chunk number 62: windsim_stats
+### code chunk number 75: windsim_stats
 ###################################################
 get.vertex.attribute.active(windsurfers,'knowsRumor',at=15)
 plot(sapply(0:31,function(t){
@@ -617,7 +708,7 @@ plot(sapply(0:31,function(t){
 
 
 ###################################################
-### code chunk number 63: windsim_extract
+### code chunk number 76: windsim_extract
 ###################################################
 # pull TEA from v3, extract values from 1st part and unlist
 unlist(get.vertex.attribute.active(windsurfers,'heardRumorFrom',
@@ -628,7 +719,7 @@ get.vertex.attribute.active(windsurfers,'heardRumorFrom',
 
 
 ###################################################
-### code chunk number 64: windsim_tree
+### code chunk number 77: windsim_tree
 ###################################################
 transTree<-function(net){
   # for each vertex in net who knows
@@ -657,13 +748,13 @@ plot(transTree(windsurfers),displaylabels=TRUE,
 
 
 ###################################################
-### code chunk number 65: citation
+### code chunk number 78: citation
 ###################################################
 citation(package='networkDynamic')
 
 
 ###################################################
-### code chunk number 66: package_listing
+### code chunk number 79: package_listing
 ###################################################
 cat(ls("package:networkDynamic"),sep="\n")
 

@@ -217,8 +217,101 @@ activate.vertices(net,onset=0,terminus=2,v=2:3)
 net[1,2]<-1
 expect_equal(network.edgecount(network.extract(net,at=1,retain.all.vertices=TRUE,active.default=FALSE)),0,info="check if edges to inactive vertices are retained when retain.all.vertices=TRUE")
 
-# check that net.obs.period updated
+test_that("net.obs.period updated appropriately",{
+  net<-network.initialize(3)
+  activate.vertices(net,onset=0,terminus=31)
+  net%n%'net.obs.period'<-list(observations=list(c(-3,-1),c(0,24),c(25,26),c(27,31),c(32,32)),mode="discrete", time.increment=1,time.unit="day")
+  netex<-network.extract(net,onset=20,terminus=30)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(unlist(net.obs$observations)),c(20,24,25,26,27,30))
+  
+  netex<-network.extract(net,onset=25,terminus=26)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(25,26))
+  
+  netex<-network.extract(net,onset=25.5,terminus=25.5)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(25.5,25.5))
+  
+  netex<-network.extract(net,onset=26.5,terminus=26.5)  # query inside gap in range
+  net.obs<-netex%n%'net.obs.period'
+  #expect_equal(unlist(net.obs$observations),c(26.5,26.5))
+  expect_equal(unlist(net.obs$observations),c(Inf,Inf))
+  
+  netex<-network.extract(net,onset=25,terminus=26.5)  # query overlap gap in range
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(25,26))
+  
+  netex<-network.extract(net,onset=32,terminus=32)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(32,32))
 
+  
+  netex<-network.extract(net,onset=32,length=1)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(32,32))
+  
+  netex<-network.extract(net,onset=33,terminus=34)
+  net.obs<-netex%n%'net.obs.period'
+  #expect_equal(unlist(net.obs$observations),c(33,34)) # queries outside of range construct new range
+  expect_equal(unlist(net.obs$observations),c(Inf,Inf))
+  
+  netex<-network.extract(net,onset=27,length=1)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(27,28))
+  
+  netex<-network.extract(net,terminus=28,length=1)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(27,28))
+  
+  netex<-network.extract(net,at=26)  # at query at open end of interval
+  net.obs<-netex%n%'net.obs.period'
+  #expect_equal(unlist(net.obs$observations),c(26,26))
+  expect_equal(unlist(net.obs$observations),c(Inf,Inf))
+  
+  netex<-network.extract(net,onset=-4,terminus=0)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(-3,-1))
+  
+  netex<-network.extract(net,onset=-4,terminus=1)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(unlist(net.obs$observations),c(-3,-1,0,1))
+  
+  # make sure the time range is not expanded
+  netex<-network.extract(net,onset=-Inf,terminus=Inf)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(-3,-1),c(0,24),c(25,26),c(27,31),c(32,32)))
+  
+  netex<-network.extract(net,onset=-10,terminus=40)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(-3,-1),c(0,24),c(25,26),c(27,31),c(32,32)))
+  
+  # test with at spell at begining of spell #575
+  test<-network.initialize(1)
+  test%n%'net.obs.period'<-list(observations=list(c(0,1),c(2,3)),mode="discrete", time.increment=1,time.unit="day")
+  netex<-network.extract(test,onset=0,terminus=0)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(0,0)))
+  
+  netex<-network.extract(test,onset=2,terminus=2)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(2,2)))
+  
+  
+  # test for 'null' observation spell
+  test<-network.initialize(1)
+  test%n%'net.obs.period'<-list(observations=list(c(Inf,Inf)),mode="discrete", time.increment=1,time.unit="day")
+  netex<-network.extract(test,onset=0,terminus=0)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(Inf,Inf)))
+  
+  test<-network.initialize(1)
+  test%n%'net.obs.period'<-list(observations=list(c(1,1)),mode="discrete", time.increment=1,time.unit="day")
+  netex<-network.extract(test,onset=1,terminus=1)
+  net.obs<-netex%n%'net.obs.period'
+  expect_equal(net.obs$observations,list(c(1,1)))
+               
+})
 
 # check extraction of network size 0
 nd<-activate.vertices(network.initialize(5),onset=1,terminus=Inf)
@@ -237,6 +330,18 @@ expect_equal(network.vertex.names(n1),LETTERS[5:1])
 deactivate.vertices(nd,onset=-1,terminus=2,v=2:4)
 n2<-network.extract(nd,at=0)
 expect_equal(network.vertex.names(n2),c("E","A"))
+
+# check that network attributes respected by extraction
+net<-network.initialize(3,directed=FALSE,bipartite=0,hyper=TRUE,loops=TRUE,multiple=TRUE)
+activate.vertices(net,onset=0,terminus=3)
+netout<-network.extract(net,onset=1,terminus=2)
+expect_equal(is.bipartite(netout),TRUE)
+expect_equal(netout%n%'bipartite',0)
+expect_equal(is.multiplex(netout),TRUE)
+expect_equal(is.hyper(netout),TRUE)
+expect_equal(is.directed(netout),FALSE)
+
+
 
 cat("ok\n")
 
@@ -483,6 +588,13 @@ if(any(!b.results)){
              bad.tests))
 }
 
+# a network with edge activity spells, some of which are missing
+net7<-network(flo)
+deactivate.edges(net7)
+activate.edges(net7, 10,20, e=3:7)
+delete.edges(net7,eid=1)
+expect_equal(network.edgecount.active(net7,at=10),5)
+
 expect_equal(network.edgecount(network.initialize(0)),0)
 
 cat("ok\n")
@@ -513,6 +625,11 @@ net5$mel[[2]] <- NULL
 net6 <- net3
 net6$mel[[1]] <- NULL
 net6$mel[[2]] <- NULL
+
+# a network with edge activity spells, missing edge,  and some deleted edges
+net7<-net3
+delete.edges(net7,eid=1)
+expect_equal(network.naedgecount.active(net7,at=10),3)
 
 b1=(network.naedgecount.active(net3, 5,15)==3)     # a positive count
 b2=(network.naedgecount.active(net6, 5,15)==2)     # a positive count
@@ -649,9 +766,13 @@ if(any(!b.results)){
 
 expect_equal(network.dyadcount.active(network.initialize(0)),0)
 
+# check for case when first mode of bipartite = 0
+test<-network.initialize(3,bipartite=0)
+network.dyadcount.active(test,at=1)
+
 cat("ok\n")
 
-# ------ network.collapse ----
+# ------ network.collapse tests----
 cat("testing network.collapse ...")
 test<-network.initialize(5)
 add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=0,terminus=1)
@@ -675,9 +796,17 @@ if ('active'%in%list.edge.attributes(net)){
   stop("network.collapse did not correctly remove edge activity data from result")
 }
 
-# count and druration added
-'activity.count'%in%list.vertex.attributes(net)
-'activity.duration'%in%list.vertex.attributes(net)
+# count and druration not added
+if('activity.count'%in%list.vertex.attributes(net) | 'activity.duration'%in%list.vertex.attributes(net)) {
+  stop("network.collpase included activity summary attributes when rm.time.info=TRUE")
+}
+
+net <-network.collapse(test,rm.time.info=FALSE)
+
+# count and druration not added
+if(!'activity.count'%in%list.vertex.attributes(net) | !'activity.duration'%in%list.vertex.attributes(net)) {
+  stop("network.collpase did not include activity summary attributes when rm.time.info=FALSE")
+}
 
 if (!all(get.edge.value(net,'activity.count')==c(3,3,3))){
   stop("network.collapse did not calculate edge activity.count correctly")
@@ -699,7 +828,7 @@ if (!all(get.vertex.attribute(net,'activity.duration')==c(Inf,Inf,Inf,Inf,Inf)))
 # test no edges example
 test<-network.initialize(5)
 activate.vertices(test,onset=0,terminus=5)
-net <-network.collapse(test)
+net <-network.collapse(test,rm.time.info=FALSE)
 
 if (!all(get.vertex.attribute(net,'activity.duration')==c(5,5,5,5,5))){
   stop("network.collapse did not calculate vertex activity.duration correctly")
@@ -710,7 +839,7 @@ test<-network.initialize(5)
 activate.vertices(test)
 add.edges(test, tail=c(1,2,3), head=c(2,3,4))
 activate.edges(test,onset=1,terminus=2,e=2)
-net <-network.collapse(test,onset=1,terminus=4)
+net <-network.collapse(test,onset=1,terminus=4,rm.time.info=FALSE)
 
 if(!all(get.edge.value(net,'activity.count')==c(1,1,1),get.edge.value(net,'activity.duration')==c(3,1,3))){
   stop("network.collapse did not calculate edge count and duration correctly when only some edges have activity spells")
@@ -719,7 +848,7 @@ if(!all(get.edge.value(net,'activity.count')==c(1,1,1),get.edge.value(net,'activ
 # test version where only some vertices have activity
 test<-network.initialize(5)
 activate.vertices(test,onset=0,terminus=5,v=2:3)
-net <-network.collapse(test)
+net <-network.collapse(test,rm.time.info=FALSE)
 if (!all(get.vertex.attribute(net,'activity.duration')==c(Inf,5,5,Inf,Inf))){
   stop("network.collapse did not calculate vertex duration correctly when only some vertices have activity")
 }
@@ -786,9 +915,38 @@ net0<-network.collapse(nd,at=0)
 expect_true(is.network(net0),info="check network object returned for net of zero vertices")
 expect_equal(network.size(net0),0,info="check network object returned for net of zero vertices has 0")
 
-#----- get.slices tests -------
+# ----- check that the earliest and latest rules work----
+testD<-network.initialize(4)
+testD[1,2:4]<-1
+activate.vertex.attribute(testD,'color','red',onset=0,terminus=1)
+activate.vertex.attribute(testD,'color','green',onset=1,terminus=2)
+activate.vertex.attribute(testD,'color','blue',onset=2,terminus=3)
+activate.edge.attribute(testD,'letter',"a",onset=0,terminus=1)
+activate.edge.attribute(testD,'letter',"b",onset=1,terminus=2)
+activate.edge.attribute(testD,'letter',"c",onset=2,terminus=3)
 
-#test for get.slices.networkDynamic
+testEarly<-network.collapse(testD,rule='earliest')
+expect_equal(testEarly%v%'color',rep('red',4))
+expect_equal(testEarly%e%'letter',rep('a',3))
+
+testLate<-network.collapse(testD,rule='latest')
+expect_equal(testLate%v%'color',rep('blue',4))
+expect_equal(testLate%e%'letter',rep('c',3))
+
+
+test_that("net.obs.period is appropriately removed or retained",{
+  nD<-activate.vertices(network.initialize(3))
+  obs<-list(observations=list(c(0,100)),mode="discrete", time.increment=1,time.unit="step")
+  nD%n%'net.obs.period'<-obs
+  n<-network.collapse(nD)
+  expect_equal(n%n%'net.obs.period',NULL)
+  n<-network.collapse(nD,rm.time.info=FALSE)
+  expect_equal(n%n%'net.obs.period',obs)
+})
+
+#----- get.networks -------
+
+#test for get.networks
 
 test <- network.initialize(5)
 add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=0,terminus=1)
@@ -797,39 +955,51 @@ activate.edges(test,onset=-2,terminus=-1)
 activate.edge.attribute(test,'weight',5,onset=3,terminus=4)
 activate.edge.attribute(test,'weight',3,onset=4,terminus=5,e=1:2)
 
+# uset start and end args
+netlist <- get.networks(test,start=0, end=5)
+expect_equal(length(netlist),5,info='get.networks tets')
+expect_equal(network.edgecount(netlist[[1]]),3,info='get.networks tets')
+expect_equal(network.edgecount(netlist[[2]]),0,info='get.networks tets')
+expect_equal(network.edgecount(netlist[[4]]),3,info='get.networks tets')
+expect_equal(network.edgecount(netlist[[5]]),3,info='get.networks tets')
 
-#list <- get.slices.networkDynamic(test,onset=0, terminus=5)
-
-#if(!all(unlist(lapply(list,network.size))==5))
-#  stop("network list encounter errors")
-
-#if(!all(unlist(lapply(list,function(x)x%n%"timestep"))==0:5))
-#  stop("network list encounter errors")
-#lapply(list,function(x)list.vertex.attributes(x))
-#lapply(list,function(x)list.edge.attributes(x))
-#lapply(list,function(x)get.edge.value(x,"weight"))
-#NULL: the edge is not activate at that slice
-#NA: the attribute is not activate at that slice, but the edge is activate
-#Numerical Value: both the edge and the attribute are activate at that slice.
-
-
-# test for get.slices.networkDynamic when onset=-Inf and terminus=Inf
-test <- network.initialize(5)
-add.edges.active(test, tail=c(1,2,3), head=c(2,3,4),onset=-Inf,terminus=Inf)
-activate.edge.attribute(test,'weight',5,onset=3,terminus=4)
-activate.edge.attribute(test,'weight',3,onset=4,terminus=5,e=1:2)
+# use start end and increment
+expect_warning(netlist <- get.networks(test,start=0, end=5,time.increment=5),'Multiple attribute values matched')
+expect_equal(length(netlist),1)
+# warning-free extraction using 'latest' rule
+netlist <- get.networks(test,start=0, end=5,time.increment=5,rule='latest')
+expect_equal(netlist[[1]]%e%'weight',c(3,3,5))
 
 
-#list <- get.slices.networkDynamic(test,onset=0, terminus=5)
+# test error cases
+expect_error(get.networks(test,start=1),"Unable to infer appropriate onsets and term")
+expect_error(get.networks(test,end=1),"Unable to infer appropriate onsets and term")
+expect_error(get.networks(test,start=0,end=1,onsets=1),"onsets & termini cannot be specified with start & end arguments")
+expect_error(get.networks(test,onsets=1,termini=1:5),"onsets and termini must have the same number of elements")
+expect_error(get.networks(test,onsets=1:3,termini=3:1),"Onset times must precede terminus times")
+expect_error(get.networks(test,start=-Inf,end=1),"start and end values must be finite")
 
-#if(!all(unlist(lapply(list,network.size))==5))
-#  stop("network list encounter errors")
+#use onset and terminus
+netlist<-get.networks(test,onsets=c(0,1,2),termini=c(1,2,3))
+expect_equal(length(netlist),3)
 
-#if(!all(unlist(lapply(list,function(x)x%n%"timestep"))==0:5))
-#  stop("network list encounter errors")
-#lapply(list,function(x)list.vertex.attributes(x))
-#lapply(list,function(x)list.edge.attributes(x))
-#lapply(list,function(x)get.edge.value(x,"weight"))
+# use net obs period to infer params
+test%n%'net.obs.period'<-list(observations=list(c(-1,5)),mode='discrete',time.increment=1,time.unit='step')
+netlist<-get.networks(test)
+expect_equal(length(netlist),6)
+
+# params should override net.obs.period
+netlist<-get.networks(test,onsets=c(0,1,2),termini=c(1,2,3))
+expect_equal(length(netlist),3)
+
+# check network size changes and argument passing
+test<-network.initialize(5)
+activate.vertices(test,onset=1:5,terminus=c(5,5,5,5,5))
+netlist<-get.networks(test,start=1,end=5)
+expect_equal(sapply(netlist,network.size),1:4)
+
+netlist<-get.networks(test,start=1,end=5,retain.all.vertices=TRUE)
+expect_equal(sapply(netlist,network.size),c(5,5,5,5))
 
 
 cat("ok\n")
