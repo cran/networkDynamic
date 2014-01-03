@@ -24,8 +24,6 @@
 #   get.edges.active
 #   get.neighborhood.active
 #   get.change.times
-#   get.edge.activity
-#   get.vertex.activity
 #   is.active
 #   is.adjacent.active
 #   network.dyadcount.active
@@ -391,7 +389,7 @@ deactivate.vertices<-function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL
 
 
 # adds new edges, active at the given time
-add.edges.active <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL, tail, head) {
+add.edges.active <- function(x, tail, head, names.eval=NULL, vals.eval=NULL, onset=NULL, terminus=NULL, length=NULL, at=NULL, ...) {
   xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
   ev <- parent.frame()
 
@@ -410,7 +408,7 @@ add.edges.active <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
     head = rep(head, length=n)
   }
 
-  add.edges(x, tail, head)
+  add.edges(x, tail, head,names.eval,vals.eval)
   activate.edges(x, onset, terminus, length, at, e=seq(x%n%"mnext"-n, x%n%"mnext"-1))
   if(exists(xn, envir=ev))
     on.exit(assign(xn, x, pos=ev))
@@ -419,16 +417,22 @@ add.edges.active <- function(x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
 
 
 # adds new vertices, active at the given time
-add.vertices.active <- function(x, nv, onset=NULL, terminus=NULL, length=NULL, at=NULL) {
-  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
-  ev <- parent.frame()
+add.vertices.active <- function(x, nv, vattr=NULL, last.mode=TRUE, onset=NULL, terminus=NULL, length=NULL, at=NULL,...) {
+ 
   if(!is.network(x))
     stop("add.vertices.active requires an argument of class network.\n")
   if(!is.numeric(nv))
     stop("The number of vertices given in 'nv' must be numeric in add.verices.active.\n")
-
-  add.vertices(x, nv)
-  activate.vertices(x, onset, terminus, length, at, v=seq(x%n%"n"-nv+1, x%n%"n"))
+  xn <- deparse(substitute(x))   # needed for proper assignment in calling environment
+  ev <- parent.frame()
+  if (nv>0){
+    add.vertices(x, nv,vattr,last.mode)
+    activate.vertices(x, onset, terminus, length, at, v=seq(x%n%"n"-nv+1, x%n%"n"))
+  } else {
+    if(!is.networkDynamic(x)){
+      x<-set.nD.class(x)
+    }
+  }
   if(exists(xn, envir=ev))
     on.exit(assign(xn, x, pos=ev))
   invisible(x)  
@@ -490,11 +494,12 @@ get.change.times <- function (x, vertex.activity=TRUE,edge.activity=TRUE, ignore
 #Variant of get.edgeIDs with dynamic query support
 get.edgeIDs.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
                              alter=NULL,neighborhood=c("out", "in", "combined"),
-                             rule=c("any","all"),na.omit=TRUE,active.default=TRUE){
+                             rule=c("any","all","earliest","latest"),na.omit=TRUE,active.default=TRUE){
   
   if(missing(v)){
     stop("'v' parameter must be specified with a vertex id to indicate which vertex to search for incident edges")
   }
+  rule<-match.arg(rule)
   # get IDs and filter by activity
   eid<-get.edgeIDs(x=x,v=v,alter=alter,neighborhood=neighborhood, na.omit=na.omit)
   if(length(eid)==0)
@@ -511,10 +516,11 @@ get.edgeIDs.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
 #run...)
 get.edges.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
                            alter=NULL,neighborhood=c("out", "in", "combined"),
-                           rule=c("any","all"),na.omit=TRUE,active.default=TRUE){
+                           rule=c("any","all","earliest","latest"),na.omit=TRUE,active.default=TRUE){
   if(missing(v)){
     stop("'v' parameter must be specified with vertex id to indicate which vertex to search for incident edges")
   }
+  rule<-match.arg(rule)
   # get IDs and filter by activity
   eid<-get.edgeIDs(x=x,v=v,alter=alter,neighborhood=neighborhood, na.omit=na.omit)
   if(length(eid)==0)
@@ -529,8 +535,8 @@ get.edges.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
 
 #Variant of get.neighborhood with dynamic query support.  Slow, most likely.
 get.neighborhood.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=NULL,
-                                  type=c("out", "in", "combined"),rule=c("any","all"),na.omit=TRUE,active.default=TRUE){
-
+                                  type=c("out", "in", "combined"),rule=c("any","all","earliest","latest"),na.omit=TRUE,active.default=TRUE){
+  rule<-match.arg(rule)
   # get active edges and assemble neighborhood in questions
   if(!is.directed(x)){
     el<-get.edges.active(x=x,v=v,onset=onset,terminus=terminus,length=length, at=at,
@@ -595,8 +601,7 @@ get.neighborhood.active<-function(x,v,onset=NULL,terminus=NULL,length=NULL, at=N
 #spell which begins at time -Inf should match -Inf onset times.  All this is
 #very annoying, and makes me wish that I'd just outlawed infinity.  But that's
 #how things are.
-is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NULL,
-                    rule=c("any","all"),active.default=TRUE){
+is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NULL, rule=c("any","all","earliest","latest"),active.default=TRUE){
   # checks for proper inputs
   if(!is.network(x)) 
     stop("is.active requires an argument of class network.\n")
@@ -639,7 +644,7 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
   if(length(e)){
     origelen<-length(e)
     e <- e[!sapply(x$mel[e], is.null)]  # filter out non-edges
-    # if e were ommited due to null edges, give warning
+    # if e were omitted due to null edges, give warning
     if (length(e)< origelen){
       warning("Some edge IDs in the e argument correspond to deleted edges and will be ignored. Indices of values returned will not correspond to elements of e.")
     }
@@ -672,41 +677,17 @@ is.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL, e=NULL,v=NU
   }
   if(any(onset>terminus))
     stop("Onset times must precede terminus times in is.active.\n")
-  act<-rep(FALSE,length(active))  
-  if(match.arg(rule)=="all")
-    int.query.true <- match.rule.all  # use the match rule defined in tea_utils.R
-  else
-    int.query.true <- match.rule.any
 
-  # main loop  
-  for(i in seq_along(active)){
-    if(is.null(active[[i]]))
-      act[i]<-active.default
-    else if (active[[i]][1,1]==-Inf && active[[i]][1,2]==Inf)
-      act[i]<-TRUE
-    else if (all(is.infinite(active[[i]])))
-      act[i]<-FALSE
-    else if (terminus[i] == onset[i]){  # point query
-      befon<-which(onset[i]==active[[i]][,1])
-      if(length(befon)>0){
-        act[i]<-TRUE
-      } else {
-        afton <-which(onset[i]>=active[[i]][,1])
-        befterm<-which((active[[i]][,2]==Inf)|(onset[i]<active[[i]][,2]))
-        act[i]<-((length(afton)*length(befterm)>0)&&(max(afton)==min(befterm)))
-      }
-    } else {  # interval query
-      act[i] <- any(apply(active[[i]], 1, int.query.true, onset[i], terminus[i]))
-    }
-  }
-  act
+#  return(.Call('IsActiveInVector', onset, terminus, active, (match.arg(rule) == 'all'), active.default, get("debug.output", envir=.GlobalEnv)))
+  return(.Call('IsActiveInVector', onset, terminus, active, (match.arg(rule) == 'all'), active.default, FALSE))
 }
 
 
 #Variant of is.adjacent for networks with dynamic extensions.  Slow, but will
 #get the job done.
 is.adjacent.active<-function(x,vi,vj,onset=NULL,terminus=NULL,length=NULL, at=NULL,
-                             rule=c("any","all"),na.omit=FALSE,active.default=TRUE){
+                             rule=c("any","all","earliest","latest"),na.omit=FALSE,active.default=TRUE){
+  rule<-match.arg(rule)
   #Initially, get edge IDs from vi to vj
   eid<-get.edgeIDs(x=x,v=vi,alter=vj,neighborhood="out",na.omit=na.omit)
   #Return TRUE iff any active edges exist
@@ -720,10 +701,10 @@ is.adjacent.active<-function(x,vi,vj,onset=NULL,terminus=NULL,length=NULL, at=NU
 
 #Variant network.dyadcount which uses only active vertices.
 network.dyadcount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
-                                    rule=c("any","all"), na.omit = TRUE, active.default=TRUE) {
+                                    rule=c("any","all","earliest","latest"), na.omit = TRUE, active.default=TRUE) {
   if (!is.network(x)) 
     stop("network.dyadcount.active requires an argument of class network.")
-
+  rule<-match.arg(rule)
   if (is.bipartite(x)) {
     bip = x%n%"bipartite"
     nactor <- ifelse(bip >= 0,sum(is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
@@ -772,7 +753,8 @@ network.dyadcount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, a
 
 #Variant network.edgecount which counts only active edges.  Not long-run safe.
 network.edgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
-                                    rule=c("any","all"), na.omit = TRUE, active.default=TRUE){
+                                    rule=c("any","all","earliest","latest"), na.omit = TRUE, active.default=TRUE){
+  rule<-match.arg(rule)
   if(x%n%"mnext">1){
     act<-is.active(x=x,onset=onset,terminus=terminus,length=length,at=at,
                  e=valid.eids(x), v=NULL,rule=rule, active.default=active.default)
@@ -788,7 +770,7 @@ network.edgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, a
 
 #Variant network.naedgecount which counts only active edges.  Not safe.
 network.naedgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL, at=NULL,
-                                      rule=c("any","all"), active.default=TRUE){
+                                      rule=c("any","all","earliest","latest"), active.default=TRUE){
   if(x%n%"mnext">1) {
     act<-is.active(x=x,onset=onset,terminus=terminus,length=length, at=at,
                    e=valid.eids(x),v=NULL,rule=rule, active.default=active.default)
@@ -800,7 +782,8 @@ network.naedgecount.active<-function (x, onset=NULL, terminus=NULL, length=NULL,
 
 #Network size which counts only active vertices - don't use for other purposes!
 network.size.active<-function(x,onset=NULL,terminus=NULL,length=NULL, at=NULL,
-                              rule=c("any","all"),active.default=TRUE){
+                              rule=c("any","all","earliest","latest"),active.default=TRUE){
+  rule<-match.arg(rule)
   sum(is.active(x=x,onset=onset,terminus=terminus,length=length, at=at,
                 e=NULL,v=seq_len(network.size(x)), rule=rule,active.default=active.default))
 }
