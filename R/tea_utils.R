@@ -272,7 +272,6 @@ get.edge.value.active <- function(x, prefix, onset=NULL, terminus=NULL,length=NU
           vals[[index]]<-vals[[index]][[1]]
         }
       }
-      # TODO: this is probably where we would apply any other merge rules
       # now that there is only one value, need to remove a level of nesting.
       vals[valid.edges] <-lapply(vals[valid.edges],"[[",1)
     }
@@ -721,57 +720,58 @@ insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
      } else {
         double.entry=FALSE
         ns <- NROW(cur.spells)
-  # find the row that this spell will go into
-	if(onset>cur.spells[ns,1]) {
-	  spell.row <- ns+1
-	} else {
-	  spell.row <- min(which(onset<=cur.spells[,1]))
-	}
-	# if the onset interrupts/continues an existing spell... 
-	if (spell.row > 1 && onset<=cur.spells[spell.row-1,2]) {
-          if(identical(val, cur.vals[[spell.row-1]])) {
-	     spell.row <- spell.row-1
-	     onset <- cur.spells[spell.row,1]   # back up onset to that of interrupted spell
-	   } else {
-             if(terminus < cur.spells[spell.row-1,2]){  # this spells splits the interrupted spell in 2
-               double.entry<-TRUE
-               val2 <- cur.vals[[spell.row-1]]
-               spell2 <-matrix(c(terminus, cur.spells[spell.row-1,2]),1,2)
-             }
-             cur.spells[spell.row-1,2] <- onset   # truncate interrupted spell
-	   }
-	}
-	# find the minimum spell that is retained (vs. spells that are overlapped/overwritten)
-	if(terminus>=cur.spells[ns, 2])
-	  retain.row <- ns+1
-	else
-	  retain.row <- min(which(terminus<cur.spells[,2]))  
-	# if the terminus interrupts/continues an existing spell...
-	if(retain.row <= ns && terminus>=cur.spells[retain.row,1]) {
-	  if(identical(val,cur.vals[[retain.row]])) {
-	    terminus <- cur.spells[retain.row,2]  # forward terminus to that of interrupted spell
-	    retain.row <- retain.row+1
-	  } else {
-	    cur.spells[retain.row,1] <- terminus  # partial overwrite of interrupted spell
-	  }
-	}
-	# construct new spell matrix and value vector
-	new.spells <- matrix(c(onset, terminus),1,2)
-	new.values <- list(val)
-        if(double.entry){
-          new.spells <- rbind(new.spells, spell2)
-          new.values[[2]] <- val2
-        }
-	if(spell.row > 1){
-	  new.spells <- rbind(cur.spells[1:(spell.row-1),], new.spells)
-	  new.values <- c(cur.vals[1:(spell.row-1)], new.values)
-	}
-	if(retain.row <= ns) {
-	  new.spells <- rbind(new.spells, cur.spells[retain.row:ns,])
-	  new.values <- c(new.values, cur.vals[retain.row:ns])
-	}
-  }
-      list(new.values, new.spells)
+        # find the row that this spell will go into
+      	if(onset>cur.spells[ns,1]) {
+      	  spell.row <- ns+1
+      	} else {
+      	  spell.row <- min(which(onset<=cur.spells[,1]))
+      	}
+      	# if the onset interrupts/continues an existing spell... 
+      	if (spell.row > 1 && onset<=cur.spells[spell.row-1,2]) {
+                if(identical(val, cur.vals[[spell.row-1]])) {
+      	     spell.row <- spell.row-1
+      	     onset <- cur.spells[spell.row,1]   # back up onset to that of interrupted spell
+      	   } else {
+                   if(terminus < cur.spells[spell.row-1,2]){  # this spells splits the interrupted spell in 2
+                     double.entry<-TRUE
+                     val2 <- cur.vals[[spell.row-1]]
+                     spell2 <-matrix(c(terminus, cur.spells[spell.row-1,2]),1,2)
+                   }
+                   cur.spells[spell.row-1,2] <- onset   # truncate interrupted spell
+      	   }
+      	}
+      	# find the minimum spell that is retained (vs. spells that are overlapped/overwritten)
+      	if(terminus>=cur.spells[ns, 2]){
+      	  retain.row <- ns+1
+      	} else {
+      	  retain.row <- min(which(terminus<cur.spells[,2]))
+      	}
+      	# if the terminus interrupts/continues an existing spell...
+      	if(retain.row <= ns && terminus>=cur.spells[retain.row,1]) {
+      	  if(identical(val,cur.vals[[retain.row]])) {
+      	    terminus <- cur.spells[retain.row,2]  # forward terminus to that of interrupted spell
+      	    retain.row <- retain.row+1
+      	  } else {
+      	    cur.spells[retain.row,1] <- terminus  # partial overwrite of interrupted spell
+      	  }
+      	}
+      	# construct new spell matrix and value vector
+      	new.spells <- matrix(c(onset, terminus),1,2)
+      	new.values <- list(val)
+              if(double.entry){
+                new.spells <- rbind(new.spells, spell2)
+                new.values[[2]] <- val2
+              }
+      	if(spell.row > 1){
+      	  new.spells <- rbind(cur.spells[1:(spell.row-1),], new.spells)
+      	  new.values <- c(cur.vals[1:(spell.row-1)], new.values)
+      	}
+      	if(retain.row <= ns) {
+      	  new.spells <- rbind(new.spells, cur.spells[retain.row:ns,])
+      	  new.values <- c(new.values, cur.vals[retain.row:ns])
+      	}
+    }
+    list(new.values, new.spells)
 }
 
 # define functions to use as match rules. These are interval comparison functions 
@@ -784,19 +784,20 @@ match.rule.any <-function(x,y,z){(y >= x[1] && y <  x[2]) ||
                 (y <= x[1] && z >= x[2] && !(x[2]==x[1] && z==x[2]))}
 
 
-# internal function to get a set of values from value and spell list using query params
-# active is a list of activity attributes, each of which list where first is list of values, and 2nd is spell matrix
-# onset, terminus, length and at if specified must have teh same length as active
+# internal function to get a set of values corresponding to a query spell, uing the TEA value and spell list components
+# active is a list of TEA attributes corresponding to a vertex (or edge), each of which is a list where the first element is list of atribute values, and the second element 2nd is spell matrix
+# onset, terminus, length and at if specified must have the same length as active
 # returns a list with elements corresponding to active, which are NA or contain list of matching values
-# todo: maybe this could be re-written to be faster with the "findinterval" function?
+# TODO: maybe this could be re-written to be faster with the "findInterval" function?
 # or just move the entire function into C
 # or parallelize with package "parallel" and parLapply
 getValsForSpells <- function(active,onset=NULL,terminus=NULL,length=NULL, at=NULL,
                              rule=c("any","all","earliest","latest"),return.tea=FALSE){
   
-  #since this is not a user functin assumes inputs verified by calling functio
-  # query rule
-  # x is matrix row, y is onset, z is terminus
+  # since this is not a user function assumes inputs were allready verified by the calling function
+
+  # switch out the function we will use to compare spell intervals 
+  # to either the 'any' or 'all' match rule
   if(match.arg(rule)=="all"){
     int.query.true <- match.rule.all
   } else {
@@ -804,37 +805,44 @@ getValsForSpells <- function(active,onset=NULL,terminus=NULL,length=NULL, at=NUL
   }
   
   
-  # default values of NA
-  vals<-as.list(rep(NA,times=length(active))) 
-  # tried this loop as lapply, didn't get speedup
+  # create a vector default values of NA for any elements that may not be otherwise specified
+  vals<-as.list(rep(NA,times=length(active)))
+  
+  # Skye: I tried this loop as lapply, didn't get any speedup, but that could be because it wasn't well written. 
+  
+  # for each network element (either vertex or edge), check the spell matrix for intersections with the query spell and return the corresponding values. 
   for(i in seq_along(active)){
-    if(is.null(active[[i]])){
+    if(is.null(active[[i]])){ # is the attribute malformed?
       stop(paste("activity attribute missing for element",i))
       # TODO: should this be controled by the null.na value?
-    } else if (length(active[[i]])==1 && is.na(active[[i]])){
-      #don't do anything, we will return NA
-    } else if (active[[i]][[2]][1,1]==-Inf && active[[i]][[2]][1,2]==Inf){
-      if (return.tea){
+    } else if (length(active[[i]])==1 && is.na(active[[i]])){ # if no value was ever specified ...
+      # don't do anything, we will return NA
+    } else if (active[[i]][[2]][1,1]==-Inf && active[[i]][[2]][1,2]==Inf){ # if it is always active ...
+      if (return.tea){ # should we return a TEA structure (for user to process) instead of just the value?
         vals[[i]]<-list(active[[i]][[1]][[1]],active[[i]][[2]][1,])
       } else {
-        vals[[i]]<-active[[i]][[1]][[1]]
+        vals[[i]]<-active[[i]][[1]][[1]]  # just return the value
       }
-    } else if (all(is.infinite(active[[i]][[2]]))) {
-      vals[[i]]<-NA
-    } else if (terminus[i] == onset[i]){  # point query
+    } else if (all(is.infinite(active[[i]][[2]]))) { # check allways inactive spell (Inf, Inf) The valid (-Inf,Inf) already dealt with in previous condition.
+      vals[[i]]<-NA  # it was marked as never active, so set to NA
+    } else if (terminus[i] == onset[i]){  # if the query is a point interval we know it can only match one value
+      # construct a vector of indices of spells having an onset equal to the query onset
       befon<-which(onset[i]==active[[i]][[2]][,1]) # before onset
-      if(length(befon)>0){
-        if (return.tea){
+      if(length(befon)>0){  # did we find it?
+        if (return.tea){ # should we return a TEA structure (for user to process) instead of just the value?
           vals[[i]]<-list(active[[i]][[1]][befon],active[[i]][[2]][befon,])
         } else {
           vals[[i]]<-active[[i]][[1]][befon]
         }
       } else {
-        afton <-which(onset[i]>=active[[i]][[2]][,1]) # after onset
-        befterm<-which((active[[i]][[2]][,2]==Inf)|(onset[i]<active[[i]][[2]][,2])) # before term
+        # construct a vector of indices of spells where the query onset is after (>=) spell onset
+        afton <-which(onset[i]>=active[[i]][[2]][,1])
+        # construct a vector of indices of spells where the query onset is before (<) spell terminus
+        befterm<-which((active[[i]][[2]][,2]==Inf)|(onset[i]<active[[i]][[2]][,2]))
+        # intersect the vector of indices to find the matching set
         splindex <-sort(intersect(afton,befterm))
         if (length(splindex)>0){
-          if (return.tea){
+          if (return.tea){ # should we return a TEA structure (for user to process) instead of just the value?
             vals[[i]]<-list(active[[i]][[1]][splindex],active[[i]][[2]][splindex,])
           } else {
             vals[[i]]<-active[[i]][[1]][splindex]
@@ -842,21 +850,35 @@ getValsForSpells <- function(active,onset=NULL,terminus=NULL,length=NULL, at=NUL
         }
       }
     } else {  # interval query
-      #this seems to be slow..
-      splindex <- sort(which(apply(active[[i]][[2]], 1, int.query.true, onset[i], terminus[i])))
-      if (length(splindex)>0){
-        # evaluate the earliest or latest rule
-        if(rule=='earliest'){
-          splindex<-splindex[1] # choose the earliest value
-        } else if (rule=='latest'){
-          splindex<-splindex[length(splindex)] # choose the latest value
+      # TODO: this seems to be slow..
+      # apply the spell query to each row of the activity matrix to determine the indices of intersecting values
+      # old code:
+      #splindex <- which(apply(active[[i]][[2]], 1, int.query.true, onset[i], terminus[i]))
+      # new code:
+      # amazingly, the for loop below takes less time than apply above because we can loop backwards
+      splindex<-numeric(0)
+      foundSome<-FALSE
+      for (r in nrow(active[[i]][[2]]):1){
+        if(int.query.true(active[[i]][[2]][r,],onset[i],terminus[i])){
+          splindex<-c(r,splindex)
+          foundSome<-TRUE
+        } else if (foundSome){ # since rows are ordered, stop searching if we've already found some
+          break
         }
-        if (return.tea){
+      }
+      if (length(splindex)>0){  # if we found 1 or more values ...
+        # evaluate the earliest or latest rule to decide which to return
+        if(rule=='earliest'){
+          splindex<-splindex[1] # choose the earliest value found
+        } else if (rule=='latest'){
+          splindex<-splindex[length(splindex)] # choose the latest value found
+        }
+        if (return.tea){ # should we return the TEA structure instead of just the value?
           vals[[i]]<-list(active[[i]][[1]][splindex],active[[i]][[2]][splindex,])
         } else {
           vals[[i]]<-active[[i]][[1]][splindex]
         }
-      }
+      } 
     }
   }
   vals
