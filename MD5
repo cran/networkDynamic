@@ -1,6 +1,6 @@
 54f87e925dc5363f8c7265eb0eec5875 *ChangeLog
-0cc56fe1f3a2cba6414f75934573998e *DESCRIPTION
-b9c586e881b8cfcec3f3edb57ed95c2e *NAMESPACE
+86ea4f929a0512435a97be1952d2df9a *DESCRIPTION
+4b6215eb233588345c80284b4110ae47 *NAMESPACE
 ae193124800c330d839ea73fe28cbe87 *R/access.R
 3795e4244a7fe48c0651d2bcd7877a7f *R/duration.matrix.R
 8dade258faa935ac162af143e3a05400 *R/extract.R
@@ -18,7 +18,7 @@ ee0051a5847097b4ca01e4775616b036 *data/windsurferPanels.rda
 53a91d23ee69650181a43dd11831e483 *data/windsurfers.rda
 bb3c601e917a6d710d37e4c442ee3877 *inst/doc/networkDynamic.R
 4e5f6d37bf982ea770536c0665a4da91 *inst/doc/networkDynamic.Rnw
-d6adf21add991319dd16bba0dcbdf8e5 *inst/doc/networkDynamic.pdf
+ba74f03f0b7bdea7f3b75c1b38727a20 *inst/doc/networkDynamic.pdf
 2f5696d9fef0d98a97a51ef9798861d2 *inst/extdata/cls33_10_16_96.son
 9ad241aa83533812102527c034f65322 *inst/extdata/cls33_10_16_96_edges.tsv
 c64ddaeceb998a707b223a1611b7cfab *inst/extdata/cls33_10_16_96_vertices.tsv
