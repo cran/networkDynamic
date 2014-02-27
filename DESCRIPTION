@@ -1,6 +1,6 @@
 Package: networkDynamic
-Version: 0.6.2
-Date: 2014-02-04
+Version: 0.6.3
+Date: 2014-02-27
 Title: Dynamic Extensions for Network Objects
 Type: Package
 Depends: R (>= 3.0.0), network (>= 1.9)
@@ -21,7 +21,7 @@ Description: Simple interface routines to facilitate the handling of network obj
 License: GPL-3
 LazyLoad: yes
 URL: http://statnet.org
-Packaged: 2014-02-06 18:43:53 UTC; rpackagebuilder
+Packaged: 2014-02-27 19:50:04 UTC; rpackagebuilder
 Author: Carter T. Butts [aut],
   Ayn Leslie-Cook [aut],
   Pavel N. Krivitsky [aut],
@@ -35,4 +35,4 @@ Author: Carter T. Butts [aut],
 Maintainer: Skye Bender-deMoll <skyebend@uw.edu>
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2014-02-06 21:33:12
+Date/Publication: 2014-02-28 18:18:38
