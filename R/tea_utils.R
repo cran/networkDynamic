@@ -49,8 +49,7 @@ activate.network.attribute <- function (x, prefix, value, onset=NULL, terminus=N
   if(!is.logical(dynamic.only)){
     stop("dynamic.only flag must be a logical in activate.vertex.attribute.\n")
   }
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   # figure out onset and terminus from at and length if necessary
   if(!is.null(at)) {
@@ -89,8 +88,8 @@ activate.network.attribute <- function (x, prefix, value, onset=NULL, terminus=N
   }
   x <- set.network.attribute(x,attrname,value=timed)
   set.nD.class(x)
-  if (exists(xn, envir = ev)) 
-    on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)	
 }
 
@@ -330,8 +329,7 @@ activate.vertex.attribute <- function (x, prefix, value, onset=NULL, terminus=NU
   if((min(v,Inf) < 1) || (max(v,-Inf) > network.size(x))){  # combinatorial breakage:
     stop("Illegal vertex id specified in v in activate.edge.attribute.\n")
   }
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   # convert at and lenth options to onsets, and possibly replicate
   if(!is.null(at)) {
@@ -382,14 +380,14 @@ activate.vertex.attribute <- function (x, prefix, value, onset=NULL, terminus=NU
       return(list(list(value[[n]]),matrix(c(onset[n],terminus[n]),nrow=1,ncol=2)))
     } else {
       return(insertSpellAndVal(timedlist[[n]][[1]],timedlist[[n]][[2]],value[[n]],onset[[n]],terminus[[n]]))
+      
     }
   })
   
   x <- set.vertex.attribute(x,attrname,value=timedlist,v=v)
   set.nD.class(x)
-  if (exists(xn, envir = ev)){
-    on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
-  }
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)	
 }
 
@@ -409,8 +407,7 @@ activate.edge.value<-function(x, prefix, value, onset=NULL, terminus=NULL,length
   }
   if ((min(e) < 1) | (max(e) > length(x$mel))) 
     stop("Illegal edge in activate.edge.value.\n")
-  xn <- deparse(substitute(x))
-  ev <- parent.frame()
+  xn <- substitute(x)
   
   # remove e corresponding to NULL edge values (deleted edges)
   e<-e[!sapply(x$mel[e],is.null)]
@@ -421,8 +418,8 @@ activate.edge.value<-function(x, prefix, value, onset=NULL, terminus=NULL,length
   })
   
   x<-activate.edge.attribute(x=x,prefix=prefix,value=evals, onset=onset,terminus=terminus,length=length,at=at,e=e,dynamic.only=dynamic.only)
-  if (exists(xn, envir = ev)) 
-    on.exit(assign(xn, x, pos = ev))
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)
   
 }
@@ -478,10 +475,7 @@ activate.edge.attribute <-function(x, prefix, value, onset=NULL, terminus=NULL,l
     }
   }
   
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
-  
- 
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   # possibly convert at and length or replicated onsets
   if(!is.null(at)) {
@@ -538,8 +532,8 @@ activate.edge.attribute <-function(x, prefix, value, onset=NULL, terminus=NULL,l
   })
   set.edge.attribute(x,attrname,timedlist,e=e)
 	set.nD.class(x)
-	if (exists(xn, envir = ev)) 
-	  on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
 	invisible(x)
 }
 
@@ -640,17 +634,29 @@ spells.overlap <-function(s1,s2){
   if ((s1[1]==Inf & s1[2]==Inf) | (s2[1]==Inf & s2[2]==Inf)){
     return(FALSE)
   }
-	if (( s1[1] >= s2[1]) & (s1[1]<s2[2])){
-		return(TRUE)
-	} else if (( s1[2] > s2[1]) & (s1[2]<s2[2])){
-		return(TRUE)
-	} else if (( s1[1] <= s2[1]) & (s1[2]>s2[2])){
-		return(TRUE)
-	} else if (all(s1==s2)){
+  # check for equality (point -point and spell spell)
+  if (all(s1==s2)){
     return(TRUE) 
-	} else {
-		return(FALSE)
-	}
+  }
+  # point-spell comparisons
+  if (s1[1]==s1[2]){
+    if (s1[1] >= s2[1] & s1[1] < s2[2]){
+      return(TRUE)
+    }
+  } else if (s2[1]==s2[2]) {
+    if (s2[1] >= s1[1] & s2[1] < s1[2]){
+      return(TRUE)
+    }
+  }
+  
+  # interval comparisons
+  #start one < end two and end one > start 2
+  if (s1[1]<s2[2] & s1[2] > s2[1]){
+    return(TRUE)
+  }
+  
+	return(FALSE)  # non-overlapping
+	
 }
 
 #search an array of spells to see if any intersect
@@ -711,7 +717,18 @@ search.spell<-function(needle,haystack){
 #    the list of two elements, 1) the updated values, 2) the
 #    updated spells
 #------------------------------------------------------------------
-insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
+
+#for this version, try no testing, just do operation
+fastInsertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
+         terminus=Inf){
+  list(
+    c(cur.vals, list(val)),
+    matrix(c(cur.spells,onset,terminus),ncol=2,byrow=TRUE)
+  )
+}
+
+
+temp.insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
                        terminus=Inf){
      if (is.null(cur.spells) ||
          (is.infinite(cur.spells[1,1]) & cur.spells[1,1] > 0)) {
@@ -756,15 +773,16 @@ insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
       	  }
       	}
       	# construct new spell matrix and value vector
-      	new.spells <- matrix(c(onset, terminus),1,2)
-      	new.values <- list(val)
+      	#new.spells <- matrix(c(onset, terminus),1,2)
+      	#new.values <- list(val)
               if(double.entry){
                 new.spells <- rbind(new.spells, spell2)
                 new.values[[2]] <- val2
               }
       	if(spell.row > 1){
-      	  new.spells <- rbind(cur.spells[1:(spell.row-1),], new.spells)
-      	  new.values <- c(cur.vals[1:(spell.row-1)], new.values)
+      	  #new.spells <- rbind(cur.spells[1:(spell.row-1),], new.spells)
+          new.spells<-matrix(c(as.numeric(cur.spells[1:(spell.row-1),]),onset,terminus),nrow=spell.row,ncol=2,byrow=TRUE)
+      	  new.values <- c(cur.vals[1:(spell.row-1)], list(val))
       	}
       	if(retain.row <= ns) {
       	  new.spells <- rbind(new.spells, cur.spells[retain.row:ns,])
@@ -772,6 +790,69 @@ insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
       	}
     }
     list(new.values, new.spells)
+}
+
+insertSpellAndVal<-function(cur.vals, cur.spells, val, onset=-Inf,
+                            terminus=Inf){
+  if (is.null(cur.spells) ||
+        (is.infinite(cur.spells[1,1]) & cur.spells[1,1] > 0)) {
+    new.values <- list(val)
+    new.spells <- matrix(c(onset, terminus), 1,2)
+  } else {
+    double.entry=FALSE
+    ns <- NROW(cur.spells)
+    # find the row that this spell will go into
+    if(onset>cur.spells[ns,1]) {
+      spell.row <- ns+1
+    } else {
+      spell.row <- min(which(onset<=cur.spells[,1]))
+    }
+    # if the onset interrupts/continues an existing spell... 
+    if (spell.row > 1 && onset<=cur.spells[spell.row-1,2]) {
+      if(identical(val, cur.vals[[spell.row-1]])) {
+        spell.row <- spell.row-1
+        onset <- cur.spells[spell.row,1]   # back up onset to that of interrupted spell
+      } else {
+        if(terminus < cur.spells[spell.row-1,2]){  # this spells splits the interrupted spell in 2
+          double.entry<-TRUE
+          val2 <- cur.vals[[spell.row-1]]
+          spell2 <-matrix(c(terminus, cur.spells[spell.row-1,2]),1,2)
+        }
+        cur.spells[spell.row-1,2] <- onset   # truncate interrupted spell
+      }
+    }
+    # find the minimum spell that is retained (vs. spells that are overlapped/overwritten)
+    if(terminus>=cur.spells[ns, 2]){
+      retain.row <- ns+1
+    } else {
+      retain.row <- min(which(terminus<cur.spells[,2]))
+    }
+    # if the terminus interrupts/continues an existing spell...
+    if(retain.row <= ns && terminus>=cur.spells[retain.row,1]) {
+      if(identical(val,cur.vals[[retain.row]])) {
+        terminus <- cur.spells[retain.row,2]  # forward terminus to that of interrupted spell
+        retain.row <- retain.row+1
+      } else {
+        cur.spells[retain.row,1] <- terminus  # partial overwrite of interrupted spell
+      }
+    }
+    # construct new spell matrix and value vector
+    new.spells <- matrix(c(onset, terminus),1,2)
+    new.values <- list(val)
+    if(double.entry){
+      new.spells <- rbind(new.spells, spell2)
+      new.values[[2]] <- val2
+    }
+    if(spell.row > 1){
+      new.spells <- rbind(cur.spells[1:(spell.row-1),], new.spells)
+      new.values <- c(cur.vals[1:(spell.row-1)], new.values)
+    }
+    if(retain.row <= ns) {
+      new.spells <- rbind(new.spells, cur.spells[retain.row:ns,])
+      new.values <- c(new.values, cur.vals[retain.row:ns])
+    }
+  }
+  list(new.values, new.spells)
 }
 
 # define functions to use as match rules. These are interval comparison functions 
@@ -931,8 +1012,7 @@ deactivate.vertex.attribute <- function (x, prefix, onset=NULL, terminus=NULL,le
   if((min(v,Inf) < 1) || (max(v,-Inf) > network.size(x))){  # combinatorial breakage:
     stop("Illegal vertex id specified in v in deactivate.vertex.attribute.\n")
   }
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   # convert at and lenth options to onsets, and possibly replicate
   if(!is.null(at)) {
@@ -990,9 +1070,8 @@ deactivate.vertex.attribute <- function (x, prefix, onset=NULL, terminus=NULL,le
   
   x <- set.vertex.attribute(x,attrname,value=timedlist,v=v)
   set.nD.class(x)
-  if (exists(xn, envir = ev)){
-    on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
-  }
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)  
 }
 
@@ -1108,8 +1187,7 @@ deactivate.edge.attribute <-function(x, prefix, onset=NULL, terminus=NULL,length
     }
   }
   
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   #Filter out non-edges caused by edge deletion
   e <- e[!sapply(x$mel[e], is.null)]  
@@ -1172,8 +1250,8 @@ deactivate.edge.attribute <-function(x, prefix, onset=NULL, terminus=NULL,length
   
   set.edge.attribute(x,attrname,timedlist,e=e)
   set.nD.class(x)
-  if (exists(xn, envir = ev)) 
-    on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)
 }
 
@@ -1218,8 +1296,7 @@ deactivate.network.attribute <- function (x, prefix, onset=NULL, terminus=NULL, 
   if(!is.logical(dynamic.only)){
     stop("dynamic.only flag must be a logical in deactivate.network.attribute.\n")
   }
-  xn <- deparse(substitute(x)) #this stuff is for modifying network inplace
-  ev <- parent.frame()
+  xn <- substitute(x) #this stuff is for modifying network inplace
   
   # figure out onset and terminus from at and length if necessary
   if(!is.null(at)) {
@@ -1258,8 +1335,8 @@ deactivate.network.attribute <- function (x, prefix, onset=NULL, terminus=NULL, 
   
   x <- set.network.attribute(x,attrname,value=timed)
   set.nD.class(x)
-  if (exists(xn, envir = ev)) 
-    on.exit(assign(xn, x, pos = ev)) # remap to parent environmnet
+  if(.validLHS(xn, parent.frame()))
+    on.exit(eval.parent(call('<-',xn, x)))
   invisible(x)  
 }
 

@@ -1,4 +1,4 @@
-useDynLib(networkDynamic)
+useDynLib(networkDynamic, .registration = TRUE)
 
 import(statnet.common, network)
 
@@ -11,7 +11,7 @@ as.networkDynamic,
 as.network.networkDynamic,
 as.networkDynamic.networkDynamic,
 as.networkDynamic.network,
-#read.son,
+read.son,
 "%t%",
 network.extract,
 "%k%",
@@ -68,5 +68,8 @@ add.edge.networkDynamic,
 reconcile.vertex.activity,
 reconcile.edge.activity,
 adjust.activity,
-get.dyads.active
+get.dyads.active,
+when.vertex.attrs.match,
+when.edge.attrs.match
+#when.next.edge.change
 )
