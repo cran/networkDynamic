@@ -479,37 +479,6 @@ networkDynamic <- function(base.net=NULL,edge.toggles=NULL,vertex.toggles=NULL,
       base.net <- network.initialize(max.vertex)
     } 
     
-    if (is.null(net.obs.period)) {
-      # observation.period and censoring
-      
-      # default to max and min of time range
-      if (is.null(start)){
-        start <- mintime(vertex.data, edge.data)
-      }
-      if (is.null(end)){
-        end <- maxtime(vertex.data, edge.data)
-      }
-      net.obs.period <- list(observations=list(c(start, end)))
-      if (!is.null(edge.spells) || !is.null(vertex.spells)) {
-        net.obs.period$mode <- 'continuous'
-        net.obs.period$time.increment<-NA
-        net.obs.period$time.unit<-"unknown"
-      } else {
-        net.obs.period$mode <- 'discrete'
-        net.obs.period$time.increment<-1
-        net.obs.period$time.unit<-"step"
-        
-      }
-    } else {
-      if (!is.null(start)) stop("start and end arguments should not be specified with net.obs.period argument")
-    }
-    # verify that net.obs.period has good structure
-    .check.net.obs.period(net.obs.period)
-    if (verbose){
-      cat("Created net.obs.period to describe network\n")
-      cat(.print.net.obs.period(net.obs.period))
-    }
-    set.network.attribute(base.net, "net.obs.period", net.obs.period)
     
     # strict construction for now
     if (max.vertex > network.size(base.net)) stop("base.net network size is smaller than size implied by vertex.ids in vertex or edge argument")
@@ -631,29 +600,52 @@ networkDynamic <- function(base.net=NULL,edge.toggles=NULL,vertex.toggles=NULL,
           }
         }
   
-      } else {  # changes or toggles, so have to loop to avoid hurting our heads
-        # assume edges in base.net to be active initially
-        if (!is.null(edge.toggles)) activate.edges(base.net, onset=-Inf, terminus=Inf)
-        for (i in seq_len(nrow(edge.data))) {
-          t <- edge.data[i,2] 
-          h <- edge.data[i,3]
-          e <- get.edgeIDs(base.net, t, h)
-          # add edge if not present in the base.net (as inactive?)
-          # TODO: problem here with directed vs undirected networks?
-          # TODO: how to handle multiplex/duplicate edge case?
-          if (length(e) == 0) {
-            add.edge(base.net, t, h)
-            e <- get.edgeIDs(base.net, t, h)
-            if (!is.null(edge.toggles)) deactivate.edges(base.net, e=e, onset=-Inf, terminus=Inf)
-          }
-          at <- edge.data[i,'time']
-          change.activate <- (if (!is.null(edge.toggles)) !is.active(base.net, at=at, e=e) else edge.data[i,'direction']==1) 
-          if (change.activate) {
-            activate.edges(base.net, e=e, onset=at, terminus=Inf)
-          } else {
-            deactivate.edges(base.net, e=e, onset=at, terminus=Inf)
-          }
+      } else {  # we are processing changes or toggles
+        
+        # if no edges exist in base.net, can at least pre-create the edges
+        if (network.edgecount(base.net) ==0){
+          dyads<-unique(edge.data[,2:3,drop=FALSE])
+          tails<-as.list(dyads[,1])
+          heads<-as.list(dyads[,2])
+          add.edges(base.net,tail=tails,head=heads)
           
+          
+          # try to pre-generate the activity matrix for each edge
+          # and set it directly, bypasing the activity methods
+		      spls<-lapply(seq_len(nrow(dyads)),function(e){
+            
+		        spellsFromChanges(edge.data,dyads[e,1],dyads[e,2],strict=FALSE)
+            # strict=FALSE means it will ignore any out-of-order changes
+		      })
+		      base.net<-set.edge.attribute(base.net,'active',spls)
+          
+          
+        } else { # some pre-existing edges, so have to loop to avoid hurting our heads
+           #TODO: this could be optimized much more, see version in tergm
+          # if there are pre-existing edges, assume edges in base.net to be active initially
+          if (!is.null(edge.toggles)) activate.edges(base.net, onset=-Inf, terminus=Inf)
+        
+          for (i in seq_len(nrow(edge.data))) {
+            t <- edge.data[i,2] 
+            h <- edge.data[i,3]
+            e <- get.edgeIDs(base.net, t, h)
+            # add edge if not present in the base.net (as inactive?)
+            # TODO: problem here with directed vs undirected networks?
+            # TODO: how to handle multiplex/duplicate edge case?
+            if (length(e) == 0) {
+              add.edge(base.net, t, h)
+              e <- get.edgeIDs(base.net, t, h)
+              if (!is.null(edge.toggles)) deactivate.edges(base.net, e=e, onset=-Inf, terminus=Inf)
+            }
+            at <- edge.data[i,'time']
+            change.activate <- (if (!is.null(edge.toggles)) !is.active(base.net, at=at, e=e) else edge.data[i,'direction']==1) 
+            if (change.activate) {
+              activate.edges(base.net, e=e, onset=at, terminus=Inf)
+            } else {
+              deactivate.edges(base.net, e=e, onset=at, terminus=Inf)
+            }
+            
+          }
         }
       } # end of non-spell edge creation
       
@@ -710,6 +702,43 @@ networkDynamic <- function(base.net=NULL,edge.toggles=NULL,vertex.toggles=NULL,
       }
       
     } # end edge data
+    
+    # if the net.obs.period was not provided, create one
+    if (is.null(net.obs.period)) {
+      # observation.period and censoring
+      # default to max and min of time range
+      if(is.null(start) | is.null(end)){
+        timeRange<-range(get.change.times(base.net,ignore.inf=FALSE))
+      }
+      if (is.null(start)){
+        start <- timeRange[1]
+      }
+      if (is.null(end)){
+        end <- timeRange[2]
+      }
+      
+      # if we are in the toggles case, need
+      net.obs.period <- list(observations=list(c(start, end)))
+      if (!is.null(edge.spells) || !is.null(vertex.spells)) {
+        
+        net.obs.period$mode <- 'continuous'
+        net.obs.period$time.increment<-NA
+        net.obs.period$time.unit<-"unknown"
+      } else {
+        net.obs.period$mode <- 'discrete'
+        net.obs.period$time.increment<-1
+        net.obs.period$time.unit<-"step"
+      }
+    } else {
+      if (!is.null(start)) stop("start and end arguments should not be specified with net.obs.period argument")
+    }
+    # verify that net.obs.period has good structure
+    .check.net.obs.period(net.obs.period)
+    if (verbose){
+      cat("Created net.obs.period to describe network\n")
+      cat(.print.net.obs.period(net.obs.period))
+    }
+    set.network.attribute(base.net, "net.obs.period", net.obs.period)
     
   } # end non-network.list part
   
@@ -812,7 +841,15 @@ as.data.frame.networkDynamic<-function(x, row.names = NULL, optional = FALSE,e=s
     }
   }
   
-  tm<-lapply(seq_along(x$mel),function(y){
+  # if start and end are still unset, set them to Inf so censoring and spell removal will work correctly
+  if(is.null(start)){
+    start<- -Inf
+  }
+  if(is.null(end)){
+    end<- Inf
+  }
+  
+  tm<-lapply(e,function(y){
     edge<-x$mel[[y]]
     if(is.null(edge)) NULL else{
       active<-edge$atl$active
@@ -830,19 +867,25 @@ as.data.frame.networkDynamic<-function(x, row.names = NULL, optional = FALSE,e=s
   })
   out <- do.call(rbind,tm)
   if (is.null(out)) {
-    out = data.frame(onset=numeric(), terminus=numeric(), tail=numeric(), head=numeric(),edge.id=numeric())
+    out <- data.frame(onset=numeric(), terminus=numeric(), tail=numeric(), head=numeric(),edge.id=numeric())
     warning("Network does not have any edge activity")
   } else {
     colnames(out)<-c("onset","terminus","tail","head","edge.id")
   }
   out<-data.frame(out)
   
-  #remove any rows with 'null' (Inf,Inf) spells
-  out<-out[!(out[,1]==Inf&out[,2]==Inf),]
+  # determine which spells are active and subset them
+  if(nrow(out)>0){
+     spls.active<-sapply(seq_len(nrow(out)),function(s){
+       spells.overlap(c(start,end),out[s,1:2])
+     })
+     out<-out[spls.active,,drop=FALSE]
+  }
+  
   
   # do censoring
-  out$onset.censored <- out$onset==-Inf
-  out$terminus.censored <- out$terminus==Inf
+  out$onset.censored <- out$onset < start | out$onset==-Inf
+  out$terminus.censored <- out$terminus > end | out$terminus==Inf
   
   if(!is.null(start)) out$onset[out$onset.censored] <- start
   
@@ -852,10 +895,7 @@ as.data.frame.networkDynamic<-function(x, row.names = NULL, optional = FALSE,e=s
   
   # have to permute columns to put edge.id at end
   out<-out[,c(1,2,3,4,6,7,8,5)]
-  
-  # remove any edges not specified in original arugments TODO: why not do this at beginning?
-  out <- out[as.numeric(out$edge.id)%in%e,]
-  # out <- out[order(out$onset),]
+
   # sort output by eid, onset,terminus
   out<-out[order(out[,8],out[,1],out[,2]),]
   
@@ -936,7 +976,7 @@ print.networkDynamic <- function(x, ...){
   } else {
     cat("  distinct change times:", length(times), "\n")
     maxrange<-range(times)
-    cat("  maximal time range:", maxrange[1], "to",maxrange[2],"\n")
+    cat("  maximal time range:", maxrange[1], "until ",maxrange[2],"\n")
   }
   # TEAs
   ntea <-list.network.attributes.active(x,onset=-Inf,terminus=Inf,dynamic.only=TRUE)
@@ -1028,18 +1068,6 @@ as.edgelist <- function(nw, attrname = NULL, as.sna.edgelist = FALSE,...){
   el
 }
 
-# given a network object (or networkDynamic) and a vertex name, return the vertex id
-# net: network or networkDynamic object
-# vertex.name: the vertex name to look up id for. Usually string type
-# returns the internal id of the vertex name. Gives a warning if the name isn't unique.
-# THIS IS REPLACED BY VERSION IN vertex.pid.R
-#get.vertex.id = function (net, vertex.name) {
-#  if (!is.network(net)) stop("Error: argument is not a network object")
-#  temp = which(network.vertex.names(net) == vertex.name)
-#  if (length(temp) == 0) stop("Error: vertex name not found")
-#  if (length(temp) > 1) warning("Warning: vertex names are not unique!")
-#  return(temp[1])
-#}
 
 # given a vector or list, return true if it is unique
 is.unique.list <- function(x) {
@@ -1114,7 +1142,7 @@ maxtime <- function(vertex.data, edge.data) {
   cat(" Network observation period info:\n")
   cat(paste("  Number of observation spells:",length(nop$observations),"\n"))
   maxrange<-range(nop$observations)
-  cat(paste("  Maximal range of observations:",maxrange[1],"to",maxrange[2],"\n"))
+  cat(paste("  Maximal time range observed:",maxrange[1],"until",maxrange[2],"\n"))
   cat(paste("  Temporal mode:",nop$mode,"\n"))
   cat(paste("  Time unit:",nop$time.unit,"\n"))
   cat(paste("  Suggested time increment:",nop$time.increment,"\n"))
@@ -1195,5 +1223,56 @@ adjust.activity <-function(nd,offset=0,factor=1){
   if(.validLHS(xn, parent.frame()))
     on.exit(eval.parent(call('<-',xn, nd)))
   invisible(nd)
+}
+
+
+# function to create edge spell matrix for a single dyad (tail,head)
+# from matrix of changes [time, tail, head, direction]
+spellsFromChanges<-function(changes,tail,head,strict=TRUE){
+  dyadRows<-changes[,2]==tail & changes[,3]==head
+  changes<-changes[dyadRows,,drop=FALSE]
+  # remove any row names that may exist
+  dimnames(changes)<-NULL
+  # if there are only three columns, we are actually dealing with toggles
+  # assume that the first toggle is an activation
+  if (ncol(changes)==3){
+    # append 1 and 0 to indicate alternating activation and deactivation
+    changes<-cbind(changes,1:nrow(changes)%%2)
+  } else {
+    # check we don't have unbalenced activations or deactivations
+    badRows<-findRep(changes[,4])
+    if(length(badRows)>0){
+      if (strict){
+        stop('encountered unbalanced changes for dyad ',tail,' ',head, ' at times ',paste(changes[badRows,1]))
+      } else {
+        # painfully find and remove offending spell row(s)
+        changes<-changes[-badRows,,drop=FALSE]
+      }
+    }
+  }
+  # if there is an odd number of rows, spells will be unbalenced
+  # so need to pad beginning or end with inf
+  if (nrow(changes)%%2>0){
+    if (changes[1,4]==1){ # if first spell was an activation
+      # last spell should be open interval
+      changes<-rbind(changes,c(Inf,tail,head,0))
+    } else {  # first spell was deactivation, so first spell should be left-open interval activation
+      changes<-rbind(c(-Inf,tail,head,1),changes)
+    }
+  }
+  # bind onsets and termini into a spell matrix
+  splmat<-cbind(changes[changes[,4]==1,1,drop=FALSE],changes[changes[,4]==0,1,drop=FALSE])
+  return(splmat)
+}
+
+
+# find the index of values which are repeats of the previous values
+findRep<-function(x){
+  if (length(x)>1){
+   # find cases where vector value matches its value offset by 1
+   return(which(x[1:(length(x)-1)]==x[2:length(x)])+1)
+  } else {
+   return(numeric(0))
+  }        
 }
 
