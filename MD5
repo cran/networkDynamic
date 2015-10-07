@@ -1,5 +1,5 @@
 d761cf47c6b7359fc819b59577f30e5d *ChangeLog
-2ff0b491dab05d7eda218ffd9c2a843a *DESCRIPTION
+7d6e4243bf33e0181d02045748e9e901 *DESCRIPTION
 841e755818394c6ed1f6043edbfb99b4 *NAMESPACE
 eb6e6fe0fa441139721589af948e352c *R/access.R
 a8e17e1277078bc48eedc22af0537195 *R/age.at.R
@@ -22,7 +22,7 @@ ee0051a5847097b4ca01e4775616b036 *data/windsurferPanels.rda
 53a91d23ee69650181a43dd11831e483 *data/windsurfers.rda
 98c7f53562b002ed8714e4b6410458a5 *inst/doc/networkDynamic.R
 7fec153cd14e6aa1ac4c57562a3ea205 *inst/doc/networkDynamic.Rnw
-3a921cc92a3e42e7aaa11875778eccb2 *inst/doc/networkDynamic.pdf
+eb188615db76bc3de38d7bc913e5e4f4 *inst/doc/networkDynamic.pdf
 a9f0c3b516736c09b2d5731d6b429524 *inst/extdata/alphaIdTest.son
 2f5696d9fef0d98a97a51ef9798861d2 *inst/extdata/cls33_10_16_96.son
 9ad241aa83533812102527c034f65322 *inst/extdata/cls33_10_16_96_edges.tsv
@@ -86,6 +86,6 @@ adb828aeb6c355d9ba5f6f202f1c339c *tests/pid_tests.R
 86aa767c142fef226df10f1d848815d6 *tests/query_tests.R
 5581717b5b5497e9b8247b12f91fcc34 *tests/reconcile.activityTests.R
 a5682854d23da7af9feb359b608a8585 *tests/tea_tests.R
-00dc41a1d379f4cec4abf6388adefae2 *tests/utils_tests.R
+80ef9842272e902e0bddb3e4ed3f80bc *tests/utils_tests.R
 c5ac811254489191a368193f0945966e *tests/when_tests.R
 7fec153cd14e6aa1ac4c57562a3ea205 *vignettes/networkDynamic.Rnw
