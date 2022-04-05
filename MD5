@@ -1,12 +1,12 @@
-295b6331d9d9b7edd20cdf18718a606a *ChangeLog
-f6bcca679b20e881b8c5f2a104e7967d *DESCRIPTION
-1d2e8d1b1200d0b93259fe42c01844be *NAMESPACE
+92a332cc606c014cd14005da8bc51e28 *ChangeLog
+c6645a2f5b4d1bbe9bae6ed34e942859 *DESCRIPTION
+66a376201f3b389ea1226ebfb6f49b78 *NAMESPACE
 437cc567c051488e2ebe0f50026ada14 *R/access.R
 a8e17e1277078bc48eedc22af0537195 *R/age.at.R
 f7cb61a2caa4d78f9f6565e0ca9a456f *R/as.networkDynamic.siena.R
-d7718e09141eb9e06e33b33ec81f86ea *R/assignment.R
+10b29af07d7fbf1d46677334e2ce0cd9 *R/assignment.R
 3795e4244a7fe48c0651d2bcd7877a7f *R/duration.matrix.R
-1cb4395c9441ce832de68f4c1376dbce *R/extract.R
+482a71a971a4277bf46db6ee6b58d68e *R/extract.R
 488fd43d2ae692f6fdd95470bc6466ed *R/get.dyads.active.R
 4491e7f4bfbfbff69f49edc471994035 *R/import.R
 4bbe82a066673acdc084ef2808a41fdc *R/reconcile.activity.R
@@ -16,7 +16,7 @@ f75bd717183c0a6aa84053ed0f8abea7 *R/vertexpid.R
 4d963794b7cdc277dc206cdb8a2970d9 *R/when.R
 4902d1467ce6ed0d179de95146c940bb *R/zzz.R
 c467d37983d177690e17d94e70324bbd *README.md
-6b9e3e392146b99a2def7563795f0534 *build/vignette.rds
+7f5f6473eae58c823a3d234123d2a76b *build/vignette.rds
 a31ffff42cae4d7da51a9fec28a2affe *data/McFarland_cls33_10_16_96.rda
 fa5ba2656d63a542b060c78cef68f1ce *data/nd_test_nets.rda
 2a3926b2805456ee41e9ea42c24da6eb *data/newcomb.RData
@@ -24,7 +24,7 @@ ee0051a5847097b4ca01e4775616b036 *data/windsurferPanels.rda
 53a91d23ee69650181a43dd11831e483 *data/windsurfers.rda
 d80fe57a21e4e0698d9492f95f049f6c *inst/doc/networkDynamic.R
 6a2b65b8d498968b261eaa936f2e40da *inst/doc/networkDynamic.Rnw
-316132b0765015b4f7783dc0a8002c9a *inst/doc/networkDynamic.pdf
+1b10c5981dd58af077eef58916b28553 *inst/doc/networkDynamic.pdf
 a9f0c3b516736c09b2d5731d6b429524 *inst/extdata/alphaIdTest.son
 2f5696d9fef0d98a97a51ef9798861d2 *inst/extdata/cls33_10_16_96.son
 9ad241aa83533812102527c034f65322 *inst/extdata/cls33_10_16_96_edges.tsv
@@ -82,7 +82,7 @@ ae826734ff6fc26422d8596e68fd280e *tests/age.at_tests.R
 678d24a951b36736fa476c335353843f *tests/converter_tests.R
 01e2b4cd6a503d5d36b65999343145c3 *tests/get_tests.R
 35765625c28a5b279331503561a05e82 *tests/import_tests.R
-76a433364049b47487b1981ff596e7b1 *tests/network_tests.R
+a2d552ae02672855983fce90603a14e6 *tests/network_tests.R
 adb828aeb6c355d9ba5f6f202f1c339c *tests/pid_tests.R
 86aa767c142fef226df10f1d848815d6 *tests/query_tests.R
 5581717b5b5497e9b8247b12f91fcc34 *tests/reconcile.activityTests.R
