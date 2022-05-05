@@ -1,5 +1,5 @@
-92a332cc606c014cd14005da8bc51e28 *ChangeLog
-c6645a2f5b4d1bbe9bae6ed34e942859 *DESCRIPTION
+ff77474654af718af77381912a4fe0fd *ChangeLog
+59975fcb694069aaa9827ccf755e9096 *DESCRIPTION
 66a376201f3b389ea1226ebfb6f49b78 *NAMESPACE
 437cc567c051488e2ebe0f50026ada14 *R/access.R
 a8e17e1277078bc48eedc22af0537195 *R/age.at.R
@@ -24,7 +24,7 @@ ee0051a5847097b4ca01e4775616b036 *data/windsurferPanels.rda
 53a91d23ee69650181a43dd11831e483 *data/windsurfers.rda
 d80fe57a21e4e0698d9492f95f049f6c *inst/doc/networkDynamic.R
 6a2b65b8d498968b261eaa936f2e40da *inst/doc/networkDynamic.Rnw
-1b10c5981dd58af077eef58916b28553 *inst/doc/networkDynamic.pdf
+bca91ff5c919f145c7d2aa46eeb2936f *inst/doc/networkDynamic.pdf
 a9f0c3b516736c09b2d5731d6b429524 *inst/extdata/alphaIdTest.son
 2f5696d9fef0d98a97a51ef9798861d2 *inst/extdata/cls33_10_16_96.son
 9ad241aa83533812102527c034f65322 *inst/extdata/cls33_10_16_96_edges.tsv
@@ -54,7 +54,7 @@ a42634cc6147294f3d86b0f6a8eb1bcc *man/network.dynamic.check.Rd
 cc2c60620a2025dca7e80989417452e6 *man/network.extensions.Rd
 f0532e9bc2229a2e1f49f48ca8478a4e *man/network.extract.Rd
 faee2ed89a72f0f59bfd2d26ff56039a *man/networkDynamic-internal.Rd
-6cc6ad8dc6b12b6250d67ae1d85dfabc *man/networkDynamic-package.Rd
+e4e5d7f8afae2c264e37e70db46ffd6f *man/networkDynamic-package.Rd
 fa2f6e15044070e33ed608ab9ef229bf *man/networkDynamic.Rd
 591c1b31b3a5d8e99b5db92318273751 *man/persistent_ids.Rd
 ed3a03fd4518651e824ff87ab5cbc8b9 *man/print.networkDynamic.Rd
