@@ -1,6 +1,6 @@
-a4295aa0f930f685b4b2429be531f053 *ChangeLog
-3d933e4f4f4358798e0961002e569e23 *DESCRIPTION
-075e9cb96678aa5d9b16e93b7f324175 *NAMESPACE
+e17c1a24d4e16dcc1499fcd6362c4fe2 *ChangeLog
+36a3fa31656947f5e9239263cf68accd *DESCRIPTION
+db20d31049d833ceda5f4574cd205924 *NAMESPACE
 437cc567c051488e2ebe0f50026ada14 *R/access.R
 a8e17e1277078bc48eedc22af0537195 *R/age.at.R
 f7cb61a2caa4d78f9f6565e0ca9a456f *R/as.networkDynamic.siena.R
@@ -15,8 +15,8 @@ f7cb61a2caa4d78f9f6565e0ca9a456f *R/as.networkDynamic.siena.R
 f75bd717183c0a6aa84053ed0f8abea7 *R/vertexpid.R
 4d963794b7cdc277dc206cdb8a2970d9 *R/when.R
 4902d1467ce6ed0d179de95146c940bb *R/zzz.R
-c467d37983d177690e17d94e70324bbd *README.md
-68724a7218f75f05fc442620cefbf1cd *build/vignette.rds
+9ace1e51c2a4c86089a4383e0889866a *README.md
+2b6b5929ffc3e89d7ba4db73537eaa00 *build/vignette.rds
 a31ffff42cae4d7da51a9fec28a2affe *data/McFarland_cls33_10_16_96.rda
 fa5ba2656d63a542b060c78cef68f1ce *data/nd_test_nets.rda
 2a3926b2805456ee41e9ea42c24da6eb *data/newcomb.RData
@@ -24,7 +24,7 @@ ee0051a5847097b4ca01e4775616b036 *data/windsurferPanels.rda
 53a91d23ee69650181a43dd11831e483 *data/windsurfers.rda
 d80fe57a21e4e0698d9492f95f049f6c *inst/doc/networkDynamic.R
 6a2b65b8d498968b261eaa936f2e40da *inst/doc/networkDynamic.Rnw
-538b7065affdcbc5e673fcd437f98b8b *inst/doc/networkDynamic.pdf
+7c41e268a1f8a0b976c49ac6c02f63bd *inst/doc/networkDynamic.pdf
 a9f0c3b516736c09b2d5731d6b429524 *inst/extdata/alphaIdTest.son
 2f5696d9fef0d98a97a51ef9798861d2 *inst/extdata/cls33_10_16_96.son
 9ad241aa83533812102527c034f65322 *inst/extdata/cls33_10_16_96_edges.tsv
@@ -32,7 +32,7 @@ c64ddaeceb998a707b223a1611b7cfab *inst/extdata/cls33_10_16_96_vertices.tsv
 874d3b1936402662111c50dcfd560232 *inst/extdata/extraVarTest.son
 9eb36b0128cca4a8b0e951175070f303 *man/Newcomb.Rd
 f845db7f5902db794252e0add025c206 *man/activate.Rd
-6ac22e94d097706e0163d25fdd0785ce *man/activity.attribute.Rd
+6fa5131c02475d6643c50caaae6958bd *man/activity.attribute.Rd
 48a825d7d61911d4e29b3e948680fedd *man/add.active.Rd
 f0ad0e0cfb76fba8ffc0080eb0ed5705 *man/add.methods.networkDynamic.Rd
 d8e78b91c1cf93c1628f40aa4f68e765 *man/adjust.activity.Rd
@@ -50,14 +50,14 @@ cb72ae866459c5fecd0e2afdded9587e *man/is.active.Rd
 6634ccbc614b607364a55c61b3662810 *man/nd_test_nets.Rd
 297cb40326ba020fc581d0b071607616 *man/net.obs.period.Rd
 b8c62f1fbea9c6cead99fd7a617ccd72 *man/network.collapse.Rd
-a42634cc6147294f3d86b0f6a8eb1bcc *man/network.dynamic.check.Rd
+39e11b14a0bc71e53cf058cbfe549cab *man/network.dynamic.check.Rd
 cc2c60620a2025dca7e80989417452e6 *man/network.extensions.Rd
 f0532e9bc2229a2e1f49f48ca8478a4e *man/network.extract.Rd
 faee2ed89a72f0f59bfd2d26ff56039a *man/networkDynamic-internal.Rd
-e4e5d7f8afae2c264e37e70db46ffd6f *man/networkDynamic-package.Rd
+ef24084a63e5caa045605c0ab8923dc0 *man/networkDynamic-package.Rd
 fa2f6e15044070e33ed608ab9ef229bf *man/networkDynamic.Rd
 591c1b31b3a5d8e99b5db92318273751 *man/persistent_ids.Rd
-ed3a03fd4518651e824ff87ab5cbc8b9 *man/print.networkDynamic.Rd
+e1a5bf2428da8ce647fcda6ced1f0596 *man/print.networkDynamic.Rd
 e92a0968bfb5dd8ce8acf01d7f009af7 *man/read.son.Rd
 692850560d78be41208ce5f3b815f066 *man/reconcile.activity.Rd
 247934f0ca76364e01160587615d1d79 *man/spell_comparisons.Rd
@@ -74,7 +74,7 @@ ab5d21ea7c6de264b596045da79370f6 *src/infection.c
 69e40730133322abf863099898cba2a6 *src/is.active.c
 f727c2009351a3b418b69a084cb9254f *src/is.active.h
 3afb1c923eea6385bbd107d7609c2875 *src/spellfunctions.h
-1604b075174c6af898c87089b430c8ba *src/wtedgetree.c
+87f659f9e7b4eea6693ab099e939d075 *src/wtedgetree.c
 7d78837c4abf596c7ec4929d13d894b5 *src/wtedgetree.h
 e9191a2668e7242456b2a4c52eb1f582 *tests/activate_tests.R
 ae826734ff6fc26422d8596e68fd280e *tests/age.at_tests.R

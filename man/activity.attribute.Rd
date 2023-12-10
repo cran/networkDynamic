@@ -34,20 +34,20 @@
   They must be consecutive, ordered forward in time, and strictly
   non-overlapping.  
   
-  The syntax for defining or querying spells can specify either an instantaneous time point or an interval.  The commands for this include \code{at=},  \code{onset=}, \code{terminus=} and \code{length=}.  Any numeric values may be used in the interval specifications, including  \code{Inf} and \code{-Inf}, (with some restrictions, see below).  A spell with \code{onset=-Inf} represents onset censoring. A spell with \code{terminus=Inf} represents terminus censoring. \code{Inf} and \code{-Inf} cannot be used with the \code{at} specification. Similarly, \code{onset} can not be \code{Inf} and \code{terminus} can not be {-Inf}.
+  The syntax for defining or querying spells can specify either an instantaneous time point or an interval.  The commands for this include \code{at=},  \code{onset=}, \code{terminus=} and \code{length=}.  Any numeric values may be used in the interval specifications, including  \code{Inf} and \code{-Inf}, (with some restrictions, see below).  A spell with \code{onset=-Inf} represents onset censoring. A spell with \code{terminus=Inf} represents terminus censoring. \code{Inf} and \code{-Inf} cannot be used with the \code{at} specification. Similarly, \code{onset} can not be \code{Inf} and \code{terminus} can not be \code{-Inf}.
   
   The general syntax rules for specifying spells are as follows:
     
     To specify a spell as a single time point:
     \itemize{
-    	\item use the \code{at} argument, or
-    	\item use \code{onset=terminus}.
+    	\item{ use the \code{at} argument, or}
+    	\item{ use \code{onset=terminus}. }
     }
     To specify a spell as a particular interval, one of the following combinations of \code{onset}, \code{terminus} and \code{length} is required:
     \itemize{
-  	  \item \code{onset} and \code{terminus} 
-  	  \item \code{onset} and \code{length} 
-  	  \item \code{terminus} and \code{length}  
+  	  \item{ \code{onset} and \code{terminus} }
+  	  \item{ \code{onset} and \code{length} }
+  	  \item{ \code{terminus} and \code{length}  }
     }
  The special \dQuote{null} spell is used to designate elements that are never active (i.e., have no valid activity spells).  These can only be set by the \code{deactivate} function (see \code{\link{activity.attribute}}) and by convention are stored as \code{c(Inf,Inf)}.  \dQuote{Null} spells are incompatible with other spells, and should be replaced whenever an activation enters the element's event history.
 
