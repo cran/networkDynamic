@@ -1,6 +1,6 @@
 Package: networkDynamic
-Version: 0.11.4
-Date: 2023-12-10?
+Version: 0.11.5
+Date: 2024-11-21
 Title: Dynamic Extensions for Network Objects
 Type: Package
 Depends: R (>= 3.0.0), network (>= 1.17.0)
@@ -24,7 +24,7 @@ License: GPL-3
 LazyLoad: yes
 URL: https://statnet.org/
 NeedsCompilation: yes
-Packaged: 2023-12-10 09:48:24 UTC; skyebend
+Packaged: 2024-11-22 06:59:28 UTC; skyebend
 Author: Carter T. Butts [aut],
   Ayn Leslie-Cook [aut],
   Pavel N. Krivitsky [aut],
@@ -38,4 +38,4 @@ Author: Carter T. Butts [aut],
   Martina Morris [ctb]
 Maintainer: Skye Bender-deMoll <skyebend@uw.edu>
 Repository: CRAN
-Date/Publication: 2023-12-10 11:00:02 UTC
+Date/Publication: 2024-11-22 07:30:02 UTC

@@ -429,7 +429,7 @@ head(get.vertex.activity(classDyn,as.spellList = TRUE))
 ### code chunk number 47: download_paj
 ###################################################
 sampFile<-tempfile('days',fileext='.zip')
-download.file('http://vlado.fmf.uni-lj.si/pub/networks/data/esna/Sampson.zip',sampFile)
+download.file('https://github.com/bavla/Nets/raw/refs/heads/master/data/Pajek/esna/Sampson.zip',sampFile)
 sampData<-read.paj(unz(sampFile,'Sampson.paj'),
                    time.format='networkDynamic',
                    edge.name = 'liked')
